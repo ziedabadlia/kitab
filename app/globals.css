@@ -119,5 +119,15 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .form-label {
+    @apply text-white text-[16px] font-normal leading-6;
+  }
+  .form-input {
+    @apply bg-[#232839] py-2.5 px-5 border-none rounded-[5px] text-[16px] font-semibold leading-6 text-white placeholder:font-normal placeholder:text-[#D6E0FF] placeholder:opacity-40 placeholder:leading-6 placeholder:text-[16px];
   }
 }

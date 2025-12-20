@@ -6,29 +6,37 @@ import booksBackgroundImage from "../assets/images/books-bg.webp";
 
 const AuthBackgroundImage = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className='w-full h-screen'>
+    /* 1. Use min-h-screen and relative. Removed h-screen to allow growth. */
+    <div className='relative w-full min-h-screen overflow-x-hidden'>
+      {/* Noise Overlay - ensures it covers the full dynamic height */}
       <Image
         fill
-        alt='bg-image'
-        className='object-cover z-10 opacity-10'
+        alt='noise'
+        className='object-cover z-10 opacity-10 pointer-events-none'
         src={noise}
       />
+
+      {/* Primary Background */}
       <Image
         fill
-        alt='bg-image'
+        alt='auth-bg'
         className='object-cover'
         src={authBackgroundImage}
       />
-      <div className='grid grid-cols-12'>
-        <div className='col-span-full md:col-span-6 z-30 h-screen w-full'>
-          <div className='flex items-center justify-center w-full h-screen'>
-            {children}
-          </div>
+
+      <div className='grid grid-cols-12 relative z-30 min-h-screen'>
+        {/* Left Column (Content/Form) */}
+        {/* 2. Use min-h-screen here as well so children can be centered vertically */}
+        <div className='col-span-full lg:col-span-6 min-h-screen w-full flex items-center justify-center p-4 py-10'>
+          {children}
         </div>
-        <div className='invisible md:visible md:col-span-6 relative h-screen'>
+
+        {/* Right Column (Illustration) */}
+        {/* 3. hidden md:block is cleaner for responsiveness than invisible */}
+        <div className='hidden lg:block lg:col-span-6 relative'>
           <Image
             fill
-            alt='bg-image'
+            alt='books-bg'
             className='object-cover z-20 w-full h-full'
             src={booksBackgroundImage}
           />
