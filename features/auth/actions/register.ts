@@ -34,25 +34,25 @@ export const register = async (
     };
   }
 
-  db.user
-    .create({
+  try {
+    const user = await db.user.create({
       data: {
         email,
         fullName,
         hashedPassword,
       },
-    })
-    .then((user) => {
-      console.log(user);
-    })
-    .catch((err) => {
-      console.log(err);
     });
 
-  const verificationToken = await generateVerificationToken(email);
-  sendVerificationEmail(verificationToken.email, verificationToken.token);
+    const verificationToken = await generateVerificationToken(email);
 
-  return {
-    success: "confirmation email sent!",
-  };
+    await sendVerificationEmail(
+      verificationToken.email,
+      verificationToken.token
+    );
+
+    return { success: "Confirmation email sent!" };
+  } catch (error) {
+    console.error("REGISTRATION_ERROR", error);
+    return { error: "Something went wrong during registration." };
+  }
 };
