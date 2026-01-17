@@ -1,10 +1,10 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "./generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // =============================================
@@ -12,22 +12,22 @@ datasource db {
 // =============================================
 
 model User {
-  id                      String                @id @default(uuid())
-  fullName                String                @map("full_name")
-  email                   String                @unique
-  emailVerified           DateTime?
-  hashedPassword          String                @map("hashed_password")
-  profilePictureUrl       String?               @map("profile_picture_url")
-  role                    Role                  @default(STUDENT)
-  accounts                Account[]
-  status                  UserStatus            @default(SUSPENDED)
-  isTwoFactorEnabled      Boolean               @default(false)
-  twoFactorConfirmation   TwoFactorConfirmation?
-  createdAt               DateTime              @default(now()) @map("created_at")
-  updatedAt               DateTime              @updatedAt @map("updated_at")
+  id                    String                 @id @default(uuid())
+  fullName              String                 @map("full_name")
+  email                 String                 @unique
+  emailVerified         DateTime?
+  hashedPassword        String                 @map("hashed_password")
+  profilePictureUrl     String?                @map("profile_picture_url")
+  role                  Role                   @default(STUDENT) // Authorization based on this field
+  accounts              Account[]
+  status                UserStatus             @default(SUSPENDED)
+  isTwoFactorEnabled    Boolean                @default(false)
+  twoFactorConfirmation TwoFactorConfirmation?
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
 
-  student                 Student?
-  notifications           Notification[]
+  student       Student?
+  notifications Notification[]
 
   @@index([email])
   @@index([fullName])
@@ -106,19 +106,19 @@ enum UserStatus {
 // =============================================
 
 model Student {
-  id                      String         @id @default(uuid())
-  userId                  String         @unique @map("user_id")
-  studentIdNumber         String         @unique @map("student_id_number")
-  universityName          String         @map("university_name")
-  universityIdCardUrl     String         @map("university_id_card_url")
-  createdAt               DateTime       @default(now()) @map("created_at")
-  updatedAt               DateTime       @updatedAt @map("updated_at")
+  id                  String   @id @default(uuid())
+  userId              String   @unique @map("user_id")
+  universityIdNumber  String   @unique @map("university_id_number")
+  universityName      String   @map("university_name")
+  universityIdCardUrl String   @map("university_id_card_url")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
-  user                    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  borrowings              Borrowing[]
-  notifications           Notification[]
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  borrowings    Borrowing[]
+  notifications Notification[]
 
-  @@index([studentIdNumber])
+  @@index([universityIdNumber])
   @@index([universityName])
   @@map("students")
 }
@@ -147,25 +147,25 @@ model Notification {
 // =============================================
 
 model Book {
-  id              String         @id @default(uuid())
+  id              String   @id @default(uuid())
   title           String
   author          String
-  slug            String         @unique
-  isbn            String?        @unique
-  description     String         @db.Text
-  coverImageUrl   String?        @map("cover_image_url")
-  videoUrl        String?        @map("video_url")
-  rating          Float          @default(0)
-  totalCopies     Int            @default(1) @map("total_copies")
-  availableCopies Int            @default(1) @map("available_copies")
-  borrowCount     Int            @default(0) @map("borrow_count")
-  departmentId    String         @map("department_id")
-  createdAt       DateTime       @default(now()) @map("created_at")
-  updatedAt       DateTime       @updatedAt @map("updated_at")
+  slug            String   @unique
+  isbn            String?  @unique
+  description     String   @db.Text
+  coverImageUrl   String?  @map("cover_image_url")
+  videoUrl        String?  @map("video_url")
+  rating          Float    @default(0)
+  totalCopies     Int      @default(1) @map("total_copies")
+  availableCopies Int      @default(1) @map("available_copies")
+  borrowCount     Int      @default(0) @map("borrow_count")
+  departmentId    String   @map("department_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  department      Department     @relation(fields: [departmentId], references: [id])
-  categories      BookCategory[]
-  borrowings      Borrowing[]
+  department Department     @relation(fields: [departmentId], references: [id])
+  categories BookCategory[]
+  borrowings Borrowing[]
 
   @@index([title])
   @@index([author])
@@ -239,8 +239,8 @@ model Borrowing {
   createdAt  DateTime        @default(now()) @map("created_at")
   updatedAt  DateTime        @updatedAt @map("updated_at")
 
-  student Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  book    Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  student Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  book    Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
   reviews Review[]
 
   @@index([studentId])

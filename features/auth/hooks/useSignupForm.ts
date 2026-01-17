@@ -4,6 +4,8 @@ import {
   RegistrationFormInputs,
   registrationSchema,
 } from "../validations/zod.schema";
+import { uploadToCloudinary } from "../actions/uploadToCloudinary";
+import { register } from "../actions/register";
 
 const useSignupForm = () => {
   const form = useForm<RegistrationFormInputs>({
@@ -20,21 +22,26 @@ const useSignupForm = () => {
 
   const { isSubmitting } = form.formState;
 
-  // 3. Define Submission Handler
   const onSubmit: SubmitHandler<RegistrationFormInputs> = async (
     data: RegistrationFormInputs
   ) => {
     console.log("Submitting validated data:", data);
 
-    // 🚨 File data is in data.idCardUpload[0]
     const fileToUpload = data.idCardUpload[0];
     console.log("File Name:", fileToUpload.name);
+    const uploadResult = await uploadToCloudinary(fileToUpload);
+    const userResult = await register({
+      ...data,
+      idCardUrl: uploadResult.public_id,
+    });
 
-    // Simulate API submission
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
+    if (userResult.error) {
+      alert(userResult.error);
+    } else {
+      alert("Registration Successful!");
+    }
     alert("Registration Successful!");
-    form.reset(); // Clear form on success
+    form.reset();
   };
 
   return {
