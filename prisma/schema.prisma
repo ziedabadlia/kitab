@@ -1,10 +1,10 @@
 generator client {
-  provider = "prisma-client"
-  output   = "./generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // =============================================
@@ -18,7 +18,7 @@ model User {
   emailVerified           DateTime?
   hashedPassword          String                @map("hashed_password")
   profilePictureUrl       String?               @map("profile_picture_url")
-  role                    Role                  @default(STUDENT) // Authorization based on this field
+  role                    Role                  @default(STUDENT)
   accounts                Account[]
   status                  UserStatus            @default(SUSPENDED)
   isTwoFactorEnabled      Boolean               @default(false)
@@ -108,7 +108,7 @@ enum UserStatus {
 model Student {
   id                      String         @id @default(uuid())
   userId                  String         @unique @map("user_id")
-  universityIdNumber      String         @unique @map("university_id_number")
+  studentIdNumber         String         @unique @map("student_id_number")
   universityName          String         @map("university_name")
   universityIdCardUrl     String         @map("university_id_card_url")
   createdAt               DateTime       @default(now()) @map("created_at")
@@ -118,7 +118,7 @@ model Student {
   borrowings              Borrowing[]
   notifications           Notification[]
 
-  @@index([universityIdNumber])
+  @@index([studentIdNumber])
   @@index([universityName])
   @@map("students")
 }
