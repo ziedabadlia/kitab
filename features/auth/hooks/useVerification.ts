@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { newVerification } from "../actions/newVerification";
 
 export const useVerification = () => {
   const [error, setError] = useState<string | undefined>();
   const [success, setSuccess] = useState<string | undefined>();
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState(false);
 
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -36,5 +36,20 @@ export const useVerification = () => {
     verify();
   }, [verify]);
 
-  return { error, success, loading };
+  const description = useMemo(() => {
+    if (loading) return "Checking your credentials to secure your account.";
+    if (success)
+      return "Your email has been successfully verified. You can now access all features.";
+    if (error)
+      return "The verification link is invalid or has expired. Please try requesting a new one.";
+    return "Confirming your verification...";
+  }, [loading, success, error]);
+
+  return {
+    success,
+    error,
+    loading,
+    description,
+    token,
+  };
 };
