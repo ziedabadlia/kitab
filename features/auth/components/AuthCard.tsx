@@ -3,7 +3,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -23,24 +22,31 @@ const AuthCard = ({
 }) => {
   return (
     <Card
-      className={`bg-linear-to-b from-[#12141D] to-[#12141D] border-none p-5 px-2 md:p-10 w-[90%] ${classes}`}
+      className={`bg-linear-to-b from-[#12141D] to-[#12141D] border-none p-4 md:p-5 w-[95%] lg:w-[90%] ${classes}`}
     >
-      <CardHeader className='gap-4 md:gap-8'>
+      <CardHeader className='gap-2 md:gap-4 p-4 md:p-6'>
         <CardTitle className='flex items-center gap-2'>
-          <Image src={logo} height={40} width={32} alt='logo' />
-          <h2 className='text-white font-semibold text-2xl md:text-3xl leading-6'>
+          <Image
+            src={logo}
+            height={32}
+            width={26}
+            alt='logo'
+            className='h-8 w-auto'
+          />
+          <h2 className='text-white font-semibold text-xl md:text-2xl leading-tight'>
             KITAB
           </h2>
         </CardTitle>
-        <CardDescription>
-          <h3 className='text-white font-semibold text-2xl md:text-3xl leading-8'>
+        <CardDescription className='space-y-1'>
+          <h3 className='text-white font-semibold text-xl md:text-2xl leading-tight'>
             {title}
           </h3>
-          <p className='text-[#D6E0FF] font-normal text-sm md:text-[18px] leading-7 mt-3'>
+          <p className='text-[#D6E0FF] font-normal text-xs md:text-base leading-snug mt-1'>
             {description}
           </p>
         </CardDescription>
       </CardHeader>
+
       <CardContent>{children}</CardContent>
     </Card>
   );
