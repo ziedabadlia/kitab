@@ -2,14 +2,14 @@
 
 import { db } from "@/lib/db";
 // import { RegisterSchema } from "@/schemas";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import z from "zod";
 import { registrationSchema } from "../validations/zod.schema";
 import { sendVerificationEmail } from "../lib/mail";
 import { generateVerificationToken } from "../lib/token";
 
 export const register = async (
-  values: z.infer<typeof registrationSchema>
+  values: z.infer<typeof registrationSchema>,
 ): Promise<{ error?: string; success?: string }> => {
   const validatedFields = registrationSchema.safeParse(values);
 
@@ -47,7 +47,7 @@ export const register = async (
 
     await sendVerificationEmail(
       verificationToken.email,
-      verificationToken.token
+      verificationToken.token,
     );
 
     return { success: "Confirmation email sent!" };

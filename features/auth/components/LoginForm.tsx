@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-
+import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import {
   Form,
@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/form";
 import AuthCard from "./AuthCard";
 import AuthButton from "./AuthButton";
-import useSignupForm from "../hooks/useSignupForm";
 import useLoginForm from "../hooks/useLoginForm";
 
 const LoginForm: React.FC = () => {
@@ -20,8 +19,8 @@ const LoginForm: React.FC = () => {
 
   return (
     <AuthCard
-      title='Create Your Library Account'
-      description='Please complete all fields and upload a valid university ID'
+      title='Welcome Back' // Updated
+      description='Access our vast collection of digital resources' // Updated
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
@@ -30,12 +29,13 @@ const LoginForm: React.FC = () => {
             name='email'
             render={({ field }) => (
               <FormItem>
-                <FormLabel className='form-label'>Email</FormLabel>
+                <FormLabel className='form-label'>Email Address</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder='name@mail.com'
+                    placeholder='name@university.edu'
                     {...field}
                     className='form-input'
+                    disabled={isSubmitting}
                   />
                 </FormControl>
                 <FormMessage />
@@ -48,13 +48,17 @@ const LoginForm: React.FC = () => {
             name='password'
             render={({ field }) => (
               <FormItem>
-                <FormLabel className='form-label'>Password</FormLabel>
+                <div className='flex items-center justify-between'>
+                  <FormLabel className='form-label'>Password</FormLabel>
+                  {/* Optional: Add "Forgot Password?" link here later */}
+                </div>
                 <FormControl>
                   <Input
                     type='password'
-                    placeholder='********'
+                    placeholder='••••••••'
                     {...field}
                     className='form-input'
+                    disabled={isSubmitting} // Disable during submit
                   />
                 </FormControl>
                 <FormMessage />
@@ -65,10 +69,13 @@ const LoginForm: React.FC = () => {
           <AuthButton isSubmitting={isSubmitting}>Login</AuthButton>
 
           <p className='text-center text-sm text-slate-400'>
-            Don’t have an account already?{" "}
-            <a href='/register' className='text-[#E7C9A5] hover:underline'>
-              Register here
-            </a>
+            New to BookWise?{" "}
+            <Link
+              href='/register'
+              className='text-[#E7C9A5] font-semibold hover:underline'
+            >
+              Create an account
+            </Link>
           </p>
         </form>
       </Form>
