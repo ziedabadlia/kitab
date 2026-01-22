@@ -6,6 +6,7 @@ import { loginSchema } from "./features/auth/validations/zod.schema";
 import { getUserByEmail } from "./features/auth/data/user";
 
 export default {
+  secret: process.env.AUTH_SECRET,
   providers: [
     Credentials({
       async authorize(credentials) {

@@ -1,14 +1,12 @@
-/**
- * Public routes do not require authentication.
- */
-export const publicRoutes = ["/", "/new-verification"];
+export const publicRoutes = ["/"];
 
-/**
- * Auth routes redirect logged-in users to the dashboard/home.
- */
-export const authRoutes = ["/login", "/register", "/error"];
+export const authRoutes = [
+  "/login",
+  "/register",
+  "/error",
+  "/new-verification",
+];
 
 export const apiAuthPrefix = "/api/auth";
-
-export const DEFAULT_LOGIN_REDIRECT = "/";
-export const ADMIN_LOGIN_REDIRECT = "/admin";
+export const DEFAULT_ADMIN_LOGIN_REDIRECT = "/dashboard";
+export const DEFAULT_LOGIN_REDIRECT = "/home";
