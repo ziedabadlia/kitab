@@ -32,11 +32,9 @@ const useLoginForm = () => {
 
       if (result?.success) {
         toast.success("Welcome back!");
-        form.reset();
-        router.refresh();
       }
     } catch (error) {
-      toast.error("An unexpected error occurred. Please try again.");
+      console.error("Login hook error:", error);
     }
   };
 
