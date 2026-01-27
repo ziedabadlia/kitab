@@ -13,6 +13,7 @@ import {
 import AuthCard from "./AuthCard";
 import AuthButton from "./AuthButton";
 import useLoginForm from "../hooks/useLoginForm";
+import { PasswordInput } from "./PasswordInput";
 
 const LoginForm: React.FC = () => {
   const { form, isSubmitting, onSubmit } = useLoginForm();
@@ -47,21 +48,16 @@ const LoginForm: React.FC = () => {
             control={form.control}
             name='password'
             render={({ field }) => (
-              <FormItem>
-                <div className='flex items-center justify-between'>
-                  <FormLabel className='form-label'>Password</FormLabel>
-                  {/* Optional: Add "Forgot Password?" link here later */}
-                </div>
+              <FormItem className='space-y-1'>
+                <FormLabel className='form-label text-sm'>Password</FormLabel>
                 <FormControl>
-                  <Input
-                    type='password'
-                    placeholder='••••••••'
+                  <PasswordInput
+                    placeholder='Atleast 8 characters long'
                     {...field}
-                    className='form-input'
-                    disabled={isSubmitting} // Disable during submit
+                    className='form-input h-10'
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className='text-[10px]' />
               </FormItem>
             )}
           />

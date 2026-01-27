@@ -23,7 +23,7 @@ export default function RootLayout({
     <html lang='en'>
       <body className={`${ibmPlexSans.variable} antialiased`}>
         {children}
-        <Toaster />
+        <Toaster richColors position='top-center' />
       </body>
     </html>
   );

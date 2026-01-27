@@ -7,22 +7,30 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export async function uploadToCloudinary(fileToUpload: File) {
+interface CloudinaryResponse {
+  public_id: string;
+  secure_url: string;
+  [key: string]: any;
+}
+
+export async function uploadToCloudinary(
+  fileToUpload: File,
+): Promise<CloudinaryResponse> {
   const arrayBuffer = await fileToUpload.arrayBuffer();
   const buffer = new Uint8Array(arrayBuffer);
-  console.log(buffer);
 
-  return new Promise((resolve, reject) => {
+  // Return the Promise typed with our interface
+  return new Promise<CloudinaryResponse>((resolve, reject) => {
     cloudinary.uploader
       .upload_stream(
         {
           folder: "id_cards",
           access_mode: "authenticated",
         },
-        (error: any, result: any) => {
+        (error, result) => {
           if (error) return reject(error);
-          resolve(result);
-        }
+          resolve(result as CloudinaryResponse);
+        },
       )
       .end(buffer);
   });

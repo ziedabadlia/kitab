@@ -9,7 +9,9 @@ import { generateVerificationToken } from "../lib/token";
 export const register = async (values: any) => {
   const validatedFields = registrationSchema.safeParse(values);
 
-  if (!validatedFields.success) return { error: "Invalid fields!" };
+  if (!validatedFields.success) {
+    return { error: validatedFields.error.issues[0].message };
+  }
 
   const {
     email,
@@ -19,10 +21,17 @@ export const register = async (values: any) => {
     universityID,
     idCardUpload,
   } = validatedFields.data;
-  const hashedPassword = await bcrypt.hash(password, 10);
 
   const existingUser = await db.user.findUnique({ where: { email } });
-  if (existingUser) return { error: "Email already in use!" };
+  if (existingUser) return { error: "User with this email already exists!" };
+
+  const existingStudent = await db.student.findUnique({
+    where: { studentIdNumber: universityID },
+  });
+  if (existingStudent)
+    return { error: "This Student ID is already registered!" };
+
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   try {
     await db.$transaction(async (tx) => {
@@ -53,6 +62,6 @@ export const register = async (values: any) => {
     return { success: "Registration successful! Please verify your email." };
   } catch (error) {
     console.error(error);
-    return { error: "Database error. Please try again later." };
+    return { error: "Something went wrong. Please try again later." };
   }
 };
