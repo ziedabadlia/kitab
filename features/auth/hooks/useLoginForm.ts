@@ -1,13 +1,15 @@
+"use client";
+
 import { zodResolver } from "@hookform/resolvers/zod";
-import { SubmitHandler, useForm } from "react-hook-form";
-import {
-  LoginFormInputs,
-  loginSchema,
-  RegistrationFormInputs,
-  registrationSchema,
-} from "../validations/zod.schema";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { login } from "../actions/login";
+import { LoginFormInputs, loginSchema } from "../validations/zod.schema";
 
 const useLoginForm = () => {
+  const router = useRouter();
+
   const form = useForm<LoginFormInputs>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -18,16 +20,24 @@ const useLoginForm = () => {
 
   const { isSubmitting } = form.formState;
 
-  // 3. Define Submission Handler
-  const onSubmit: SubmitHandler<LoginFormInputs> = async (
-    data: LoginFormInputs
-  ) => {
-    console.log("Submitting validated data:", data);
-    // Simulate API submission
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+  const onSubmit = async (values: LoginFormInputs) => {
+    try {
+      const result = await login(values);
 
-    alert("Login Successful!");
-    form.reset(); // Clear form on success
+      if (result?.error) {
+        form.reset({ ...values, password: "" });
+        toast.error(result.error);
+        return;
+      }
+
+      if (result?.success) {
+        toast.success("Welcome back!");
+        form.reset();
+        router.refresh();
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred. Please try again.");
+    }
   };
 
   return {

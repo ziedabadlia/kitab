@@ -19,21 +19,27 @@ export const registrationSchema = z.object({
       message: "Password needs at least one uppercase letter.",
     })
     .regex(/[0-9]/, { message: "Password needs at least one number." }),
-  idCardUpload: z
-    .any()
-    .refine((val) => val && val.length > 0, {
-      message: "University ID Card file is required.",
-    })
-    .refine((val) => val?.[0]?.size <= 5000000, {
-      message: "Max file size is 5MB.",
-    })
-    .refine(
-      (val) =>
-        ["image/jpeg", "image/png", "application/pdf"].includes(val?.[0]?.type),
-      {
-        message: "Only JPG, PNG, and PDF files are accepted.",
-      }
-    ),
+
+  idCardUpload: z.union([
+    z.string().min(1, "ID Card is required"),
+    z
+      .any()
+      .refine(
+        (val) => val && val.length > 0,
+        "University ID Card file is required.",
+      )
+      .refine((val) => {
+        if (typeof val === "string") return true;
+        return val?.[0]?.size <= 5000000;
+      }, "Max file size is 5MB.")
+      .refine((val) => {
+        if (typeof val === "string") return true;
+        return ["image/jpeg", "image/png", "application/pdf"].includes(
+          val?.[0]?.type,
+        );
+      }, "Only JPG, PNG, and PDF files are accepted."),
+  ]),
+
   universityName: z
     .string()
     .min(1, { message: "Please select your university." }),
