@@ -13,9 +13,9 @@ export default async function UserLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  const isSuspended = session!.user.status === UserStatus.SUSPENDED;
-
   if (!session) redirect("/login");
+  const isRestricted =
+    session.user.role === "STUDENT" && session.user.status !== "ACCEPTED";
 
   return (
     <main className='kitab-bg flex flex-col min-h-screen'>
@@ -29,7 +29,7 @@ export default async function UserLayout({
       <div className='relative z-10'>
         <Navbar session={session} />
         <div className='mt-24 px-5 md:px-10 lg:px-20'>
-          {isSuspended && (
+          {isRestricted && (
             <Announcement
               variant='warning'
               message='Your account is currently under review. You have limited access until an administrator approves your request.'

@@ -3,7 +3,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { db } from "@/lib/db";
 import authConfig from "@/auth.config";
 import { getUserById } from "./data/user";
-import { UserStatus } from "@prisma/client";
+import { Role, UserStatus } from "@prisma/client";
 
 export const {
   handlers: { GET, POST },
@@ -16,16 +16,6 @@ export const {
     error: "/error",
   },
   callbacks: {
-    async session({ token, session }) {
-      if (session.user) {
-        session.user.id = token.sub as string;
-        session.user.name = token.name;
-        session.user.email = token.email as string;
-        session.user.image = token.image as string;
-        session.user.status = token.status as UserStatus;
-      }
-      return session;
-    },
     async jwt({ token }) {
       if (!token.sub) return token;
 
@@ -34,10 +24,25 @@ export const {
 
       token.name = existingUser.fullName;
       token.email = existingUser.email;
-      token.profilePictureUrl = existingUser.profilePictureUrl;
-      token.status = existingUser.status;
+      token.role = existingUser.role;
+      token.image = existingUser.profilePictureUrl;
+
+      // Resolve status: Admins are ACCEPTED by default.
+      // Students use their nested status.
+      token.status =
+        existingUser.role === "ADMIN"
+          ? "ACCEPTED"
+          : existingUser.student?.status || "SUSPENDED";
 
       return token;
+    },
+    async session({ token, session }) {
+      if (session.user) {
+        session.user.id = token.sub as string;
+        session.user.role = token.role as Role;
+        session.user.status = token.status as UserStatus;
+      }
+      return session;
     },
   },
   adapter: PrismaAdapter(db),
