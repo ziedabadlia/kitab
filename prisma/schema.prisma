@@ -20,7 +20,6 @@ model User {
   profilePictureUrl       String?               @map("profile_picture_url")
   role                    Role                  @default(STUDENT)
   accounts                Account[]
-  status                  UserStatus            @default(SUSPENDED)
   isTwoFactorEnabled      Boolean               @default(false)
   twoFactorConfirmation   TwoFactorConfirmation?
   createdAt               DateTime              @default(now()) @map("created_at")
@@ -32,7 +31,6 @@ model User {
   @@index([email])
   @@index([fullName])
   @@index([role])
-  @@index([status])
   @@map("users")
 }
 
@@ -108,6 +106,7 @@ enum UserStatus {
 model Student {
   id                      String         @id @default(uuid())
   userId                  String         @unique @map("user_id")
+  status                  UserStatus     @default(SUSPENDED)
   studentIdNumber         String         @unique @map("student_id_number")
   universityName          String         @map("university_name")
   universityIdCardUrl     String         @map("university_id_card_url")
