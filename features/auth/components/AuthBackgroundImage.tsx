@@ -2,13 +2,12 @@
 
 import Image from "next/image";
 import React from "react";
-import authBackgroundImage from "../assets/images/auth-bg.webp";
-import noise from "../assets/images/noise.webp";
+import noise from "@/assets/images/noise.webp";
 import booksBackgroundImage from "../assets/images/books-bg.webp";
 
 const AuthBackgroundImage = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className='relative w-full min-h-screen overflow-x-hidden bg-white'>
+    <div className='kitab-bg relative w-full min-h-screen overflow-x-hidden bg-white'>
       {/* 1. Global Noise Layer */}
       <Image
         fill
@@ -18,12 +17,12 @@ const AuthBackgroundImage = ({ children }: { children: React.ReactNode }) => {
       />
 
       {/* 2. Global Background Image */}
-      <Image
+      {/* <Image
         fill
         alt='auth-bg'
         className='object-cover'
         src={authBackgroundImage}
-      />
+      /> */}
 
       <div className='grid grid-cols-12 relative z-30 min-h-screen'>
         {/* 3. Left Side: Form/Content Area (6 cols on desktop) */}

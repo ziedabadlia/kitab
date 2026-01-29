@@ -3,6 +3,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { db } from "@/lib/db";
 import authConfig from "@/auth.config";
 import { getUserById } from "./data/user";
+import { UserStatus } from "@prisma/client";
 
 export const {
   handlers: { GET, POST },
@@ -16,14 +17,13 @@ export const {
   },
   callbacks: {
     async session({ token, session }) {
-      if (token.sub && session.user) {
-        session.user.id = token.sub;
+      if (session.user) {
+        session.user.id = token.sub as string;
+        session.user.name = token.name;
+        session.user.email = token.email as string;
+        session.user.image = token.image as string;
+        session.user.status = token.status as UserStatus;
       }
-
-      if (token.role && session.user) {
-        session.user.role = token.role as "ADMIN" | "STUDENT";
-      }
-
       return session;
     },
     async jwt({ token }) {
@@ -32,7 +32,10 @@ export const {
       const existingUser = await getUserById(token.sub);
       if (!existingUser) return token;
 
-      token.role = existingUser.role;
+      token.name = existingUser.fullName;
+      token.email = existingUser.email;
+      token.profilePictureUrl = existingUser.profilePictureUrl;
+      token.status = existingUser.status;
 
       return token;
     },
