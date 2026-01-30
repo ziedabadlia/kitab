@@ -1,13 +1,30 @@
-import { auth } from "@/features/auth/auth"; // Adjust this path based on your project structure
+import { auth } from "@/features/auth/auth";
+import BookSpotlight from "@/features/userPlatform/components/BookSpotlight";
+import { db } from "@/lib/db";
 
 const HomePage = async () => {
   const session = await auth();
 
-  if (session) {
-    console.log("LOGGED_IN_USER_DATA:", session.user);
-  }
+  // Fetch the latest book to feature in the spotlight
+  // We include categories because our UI needs to show the genre
+  const featuredBook = await db.book.findFirst({
+    include: {
+      categories: {
+        include: {
+          category: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
 
-  return <div className='text-white pt-24 px-10'></div>;
+  return (
+    <div className='flex flex-col gap-20 pb-10'>
+      {featuredBook && <BookSpotlight book={featuredBook} session={session} />}
+
+      {/* Next: Popular Books Grid */}
+    </div>
+  );
 };
 
 export default HomePage;
