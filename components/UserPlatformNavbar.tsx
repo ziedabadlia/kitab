@@ -9,7 +9,11 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { logout } from "@/features/auth/actions/logout";
 
-const Navbar = ({ session }: { session: any }) => {
+interface NavbarProps {
+  userName: string;
+}
+
+const Navbar = ({ userName }: NavbarProps) => {
   const [hasScrolled, setHasScrolled] = useState(false);
   const pathname = usePathname();
 
@@ -68,10 +72,10 @@ const Navbar = ({ session }: { session: any }) => {
           {/* User Profile Avatar */}
           <Link href='/profile' className='flex items-center gap-2 group'>
             <div className='w-8 h-8 rounded-full bg-[#A3E635] flex items-center justify-center text-[#05070A] font-bold text-xs ring-2 ring-transparent group-hover:ring-[#E7C9A5] transition-all'>
-              {session?.user?.name?.slice(0, 2).toUpperCase() || "AH"}
+              {userName?.slice(0, 2).toUpperCase() || "AH"}
             </div>
             <span className='text-white text-sm font-semibold hidden md:block'>
-              {session?.user?.name || "Adrian"}
+              {userName || "Adrian"}
             </span>
           </Link>
 

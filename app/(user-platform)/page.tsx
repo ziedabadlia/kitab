@@ -1,8 +1,9 @@
 import { auth } from "@/features/auth/auth";
-import BookSpotlight from "@/features/userPlatform/components/BookSpotlight";
-import PopularBooks from "@/features/userPlatform/components/PopularBooks";
-import PopularBooksSkeleton from "@/features/userPlatform/components/PopularBooksSkeleton";
-import { getPopularBooks } from "@/features/userPlatform/lib/popularBooks";
+import BookSpotlight from "@/components/BookSpotlight";
+import { getPopularBooks } from "@/features/home/lib/popularBooks";
+import PopularBooks, {
+  PopularBooksSkeleton,
+} from "@/features/home/sections/PopularBooks";
 import { db } from "@/lib/db";
 import { Suspense } from "react";
 
@@ -18,16 +19,24 @@ const HomePage = async () => {
 
   return (
     <div className='flex flex-col gap-20 pb-10'>
-      {featuredBook && <BookSpotlight book={featuredBook} session={session} />}
+      {featuredBook && (
+        <BookSpotlight
+          book={featuredBook}
+          status={session?.user.status!}
+          role={session?.user.role}
+        />
+      )}
       <Suspense fallback={<PopularBooksSkeleton />}>
         <PopularBooksList />
       </Suspense>
     </div>
   );
 };
+
 export default HomePage;
 
 const PopularBooksList = async () => {
   const books = await getPopularBooks();
-  return <PopularBooks books={books} />;
+  const serializedBooks = JSON.parse(JSON.stringify(books));
+  return <PopularBooks books={serializedBooks} />;
 };

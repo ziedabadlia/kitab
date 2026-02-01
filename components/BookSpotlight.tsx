@@ -1,20 +1,25 @@
-import React from "react";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Lock } from "lucide-react";
 import { Session } from "next-auth";
 import starSvg from "@/assets/svg/star.svg";
 import BookCover from "./BookCover";
 import Image from "next/image";
-import { Book } from "@prisma/client";
+import { Book, Prisma, Role, UserStatus } from "@prisma/client";
+
+type BookWithCategories = Prisma.BookGetPayload<{
+  include: {
+    categories: { include: { category: true } };
+  };
+}>;
 
 interface Props {
-  book: Book;
-  session: Session | null;
+  book: BookWithCategories;
+  status: UserStatus;
+  role: Role;
 }
 
-const BookSpotlight = ({ book, session }: Props) => {
-  const isSuspended =
-    session?.user?.role === "STUDENT" && session?.user?.status !== "ACCEPTED";
+const BookSpotlight = ({ book, status, role }: Props) => {
+  const isSuspended = role === "STUDENT" && status !== "ACCEPTED";
   const categoryName = book.categories?.[0]?.category?.name || "General";
 
   return (
@@ -83,8 +88,8 @@ const BookSpotlight = ({ book, session }: Props) => {
       <div className='relative flex-1 flex justify-center items-start w-full lg:w-auto'>
         <div className='relative'>
           <BookCover
-            className='w-[240px] h-[330px] md:w-[276px] md:h-[384px]'
-            coverImage={book.coverImageUrl}
+            className='w-60 h-[330px] md:w-[276px] md:h-96'
+            coverImage={book.coverImageUrl!}
             coverColor={book.coverColor}
             variant='hero'
           />

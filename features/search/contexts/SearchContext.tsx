@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback } from "react";
-import { useDebounce } from "../hooks/useDebounce";
+import { useDebounce } from "../../userPlatform/hooks/useDebounce";
 
 interface SearchFilters {
   departmentId?: string;

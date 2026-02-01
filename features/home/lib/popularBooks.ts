@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 
-export const getPopularBooks = async () => {
+export async function getPopularBooks() {
   return await db.book.findMany({
     take: 6,
     orderBy: {
@@ -14,4 +14,4 @@ export const getPopularBooks = async () => {
       },
     },
   });
-};
+}

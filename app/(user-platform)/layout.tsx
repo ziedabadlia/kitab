@@ -1,11 +1,10 @@
 import { auth } from "@/features/auth/auth";
-import Navbar from "@/features/userPlatform/components/UserPlatformNavbar";
+import Navbar from "@/components/UserPlatformNavbar";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 
 import noise from "@/assets/images/noise.webp";
 import Announcement from "@/components/Announcement";
-import { UserStatus } from "@prisma/client";
 
 export default async function UserLayout({
   children,
@@ -14,6 +13,7 @@ export default async function UserLayout({
 }) {
   const session = await auth();
   if (!session) redirect("/login");
+
   const isRestricted =
     session.user.role === "STUDENT" && session.user.status !== "ACCEPTED";
 
@@ -27,7 +27,7 @@ export default async function UserLayout({
         priority
       />
       <div className='relative z-10'>
-        <Navbar session={session} />
+        <Navbar userName={session.user.name} />
         <div className='mt-24 px-5 md:px-10 lg:px-20'>
           {isRestricted && (
             <Announcement
