@@ -1,60 +1,73 @@
+// BookCover.tsx - Enhanced with page thickness effect
 import React from "react";
 import Image from "next/image";
-import BookFrame from "@/assets/svg/bookFrame.svg";
 import { cn } from "@/lib/utils";
+import BookFrame from "./BookFrame";
 
 interface Props {
   className?: string;
   coverImage: string;
+  variant?: "regular" | "hero";
+  coverColor?: string;
 }
 
-const BookCover = ({ className, coverImage }: Props) => {
+const BookCover = ({
+  coverImage,
+  variant = "regular",
+  coverColor,
+  className,
+}: Props) => {
   return (
-    <div className={cn("relative transition-all duration-300", className)}>
-      {/* 1. ATMOSPHERIC GLOW (The soft background light) */}
-      <div className='absolute top-[10%] left-[12%] -z-10 w-[80%] h-[80%] opacity-40 blur-[40px]'>
-        <Image src={coverImage} alt='glow' fill className='object-cover' />
-      </div>
-
-      {/* 2. THE MAIN BOOK STRUCTURE (Sharp) */}
+    <div
+      className={cn(
+        "relative transition-all duration-300 filter drop-shadow-2xl",
+        className,
+      )}
+    >
       <div className='relative w-full h-full z-20'>
-        <Image
-          src={BookFrame}
-          alt='Book Frame'
-          fill
-          className='z-10 object-fill pointer-events-none'
-        />
+        <BookFrame coverColor={coverColor!} />
 
-        <div className='absolute z-20 left-[12%] top-[0%] w-[87%] h-[88%] overflow-hidden'>
+        {/* Cover Image Container */}
+        <div className='absolute z-10 left-[12%] top-[0%] w-[87%] h-[88%] overflow-hidden group'>
           <Image
             src={coverImage}
-            alt='Book Cover'
+            alt='Cover'
             fill
-            className='object-fill'
-            priority
+            className='object-fill transition-transform duration-500 group-hover:scale-105'
+          />
+
+          {/* Page Edge Effect (Right Side) */}
+          <div
+            className='absolute right-0 top-0 bottom-0 w-[3px] opacity-0 group-hover:opacity-100 transition-opacity duration-300'
+            style={{
+              background: `linear-gradient(to right, transparent, ${coverColor || "#fff"}30)`,
+            }}
           />
         </div>
-      </div>
 
-      {/* 3. THE SECONDARY BOOK (Blurred & Offset) */}
-      {/* Added 'blur-sm' or 'blur-[5px]' to this container */}
-      <div className='absolute w-full h-full top-[10%] left-28 z-10 rotate-6 blur-[5px] opacity-80'>
-        <Image
-          src={BookFrame}
-          alt='Book Frame'
-          fill
-          className='z-0 object-fill pointer-events-none'
+        {/* Page Thickness (Bottom Edge Effect) */}
+        <div
+          className='absolute bottom-[12%] left-[12%] right-[1%] h-[3px] opacity-60'
+          style={{
+            background: `linear-gradient(to bottom, ${coverColor || "#fff"}20, transparent)`,
+          }}
         />
-
-        <div className='absolute z-10 left-[12%] top-[0%] w-[87%] h-[88%] overflow-hidden'>
-          <Image
-            src={coverImage}
-            alt='Book Cover Shadow'
-            fill
-            className='object-fill'
-          />
-        </div>
       </div>
+
+      {/* Hero Variant: Enhanced Shadow with Blur */}
+      {variant === "hero" && (
+        <div className='absolute w-full h-full top-[10%] left-10 z-10 rotate-6 blur-[5px] opacity-60'>
+          <BookFrame coverColor={coverColor!} />
+          <div className='absolute z-10 left-[12%] top-[0%] w-[87%] h-[88%] overflow-hidden'>
+            <Image
+              src={coverImage}
+              alt='Shadow'
+              fill
+              className='object-fill grayscale opacity-50'
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

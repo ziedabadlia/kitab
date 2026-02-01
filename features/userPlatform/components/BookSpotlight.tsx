@@ -5,9 +5,10 @@ import { Session } from "next-auth";
 import starSvg from "@/assets/svg/star.svg";
 import BookCover from "./BookCover";
 import Image from "next/image";
+import { Book } from "@prisma/client";
 
 interface Props {
-  book: any;
+  book: Book;
   session: Session | null;
 }
 
@@ -84,6 +85,8 @@ const BookSpotlight = ({ book, session }: Props) => {
           <BookCover
             className='w-[240px] h-[330px] md:w-[276px] md:h-[384px]'
             coverImage={book.coverImageUrl}
+            coverColor={book.coverColor}
+            variant='hero'
           />
         </div>
       </div>

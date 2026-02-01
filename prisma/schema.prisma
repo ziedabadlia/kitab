@@ -154,6 +154,7 @@ model Book {
   isbn            String?        @unique
   description     String         @db.Text
   coverImageUrl   String?        @map("cover_image_url")
+  coverColor      String         @default("#010101") @map("cover_color")
   videoUrl        String?        @map("video_url")
   rating          Float          @default(0)
   totalCopies     Int            @default(1) @map("total_copies")

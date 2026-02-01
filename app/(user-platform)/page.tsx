@@ -1,19 +1,17 @@
 import { auth } from "@/features/auth/auth";
 import BookSpotlight from "@/features/userPlatform/components/BookSpotlight";
+import PopularBooks from "@/features/userPlatform/components/PopularBooks";
+import PopularBooksSkeleton from "@/features/userPlatform/components/PopularBooksSkeleton";
+import { getPopularBooks } from "@/features/userPlatform/lib/popularBooks";
 import { db } from "@/lib/db";
+import { Suspense } from "react";
 
 const HomePage = async () => {
   const session = await auth();
 
-  // Fetch the latest book to feature in the spotlight
-  // We include categories because our UI needs to show the genre
   const featuredBook = await db.book.findFirst({
     include: {
-      categories: {
-        include: {
-          category: true,
-        },
-      },
+      categories: { include: { category: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -21,10 +19,15 @@ const HomePage = async () => {
   return (
     <div className='flex flex-col gap-20 pb-10'>
       {featuredBook && <BookSpotlight book={featuredBook} session={session} />}
-
-      {/* Next: Popular Books Grid */}
+      <Suspense fallback={<PopularBooksSkeleton />}>
+        <PopularBooksList />
+      </Suspense>
     </div>
   );
 };
-
 export default HomePage;
+
+const PopularBooksList = async () => {
+  const books = await getPopularBooks();
+  return <PopularBooks books={books} />;
+};
