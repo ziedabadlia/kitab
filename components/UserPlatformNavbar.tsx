@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -17,23 +17,50 @@ const Navbar = ({ userName }: NavbarProps) => {
   const [hasScrolled, setHasScrolled] = useState(false);
   const pathname = usePathname();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setHasScrolled(window.scrollY > 0);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+  // Memoize scroll handler to prevent recreating on every render
+  const handleScroll = useCallback(() => {
+    setHasScrolled(window.scrollY > 0);
   }, []);
 
-  return (
-    <nav
-      className={cn(
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [handleScroll]);
+
+  // Memoize navbar classes to prevent recalculating on every render
+  const navClasses = useMemo(
+    () =>
+      cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-5 md:px-10 lg:px-20 py-5",
         hasScrolled
           ? "bg-[#05070A]/80 backdrop-blur-md border-b border-white/5"
           : "bg-transparent",
-      )}
-    >
+      ),
+    [hasScrolled],
+  );
+
+  // Memoize home link classes
+  const homeLinkClasses = useMemo(
+    () =>
+      cn(
+        "text-sm font-medium transition-colors hover:text-[#E7C9A5]",
+        pathname === "/" ? "text-[#E7C9A5]" : "text-slate-300",
+      ),
+    [pathname],
+  );
+
+  // Memoize search link classes
+  const searchLinkClasses = useMemo(
+    () =>
+      cn(
+        "text-sm font-medium transition-colors hover:text-[#E7C9A5]",
+        pathname === "/search" ? "text-[#E7C9A5]" : "text-slate-300",
+      ),
+    [pathname],
+  );
+
+  return (
+    <nav className={navClasses}>
       <div className='flex items-center justify-between max-w-7xl mx-auto'>
         {/* Brand Logo & Name */}
         <Link href='/' className='flex items-center gap-2'>
@@ -50,22 +77,10 @@ const Navbar = ({ userName }: NavbarProps) => {
 
         {/* Navigation Links & User Profile */}
         <div className='flex items-center gap-4 md:gap-8'>
-          <Link
-            href='/'
-            className={cn(
-              "text-sm font-medium transition-colors hover:text-[#E7C9A5]",
-              pathname === "/" ? "text-[#E7C9A5]" : "text-slate-300",
-            )}
-          >
+          <Link href='/' className={homeLinkClasses}>
             Home
           </Link>
-          <Link
-            href='/search'
-            className={cn(
-              "text-sm font-medium transition-colors hover:text-[#E7C9A5]",
-              pathname === "/search" ? "text-[#E7C9A5]" : "text-slate-300",
-            )}
-          >
+          <Link href='/search' className={searchLinkClasses}>
             Search
           </Link>
 

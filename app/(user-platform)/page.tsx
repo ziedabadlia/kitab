@@ -10,12 +10,15 @@ import { Suspense } from "react";
 const HomePage = async () => {
   const session = await auth();
 
-  const featuredBook = await db.book.findFirst({
-    include: {
-      categories: { include: { category: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  // Parallelize database queries to improve performance
+  const [featuredBook] = await Promise.all([
+    db.book.findFirst({
+      include: {
+        categories: { include: { category: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
 
   return (
     <div className='flex flex-col gap-20 pb-10'>

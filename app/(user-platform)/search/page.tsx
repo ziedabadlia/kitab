@@ -1,14 +1,10 @@
-// import { SearchProvider } from "@/contexts/SearchContext";
-// import SearchContent from "@/components/search/SearchContent";
-
-// export default function SearchPage() {
-//   return (
-//     <SearchProvider>
-//       <SearchContent />
-//     </SearchProvider>
-//   );
-// }
+import SearchContent from "@/features/search/components/SearchContent";
+import { SearchProvider } from "@/features/search/contexts/SearchContext";
 
 export default function SearchPage() {
-  return <></>;
+  return (
+    <SearchProvider>
+      <SearchContent />
+    </SearchProvider>
+  );
 }

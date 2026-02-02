@@ -1,7 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from "react";
-import { useDebounce } from "../../userPlatform/hooks/useDebounce";
+import { useDebounce } from "@/hooks/useDebounce";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 
 interface SearchFilters {
   departmentId?: string;
@@ -26,6 +32,15 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
 
   const debouncedQuery = useDebounce(query, 500);
 
+  // Memoize callbacks to prevent unnecessary re-renders of child components
+  const handleSetQuery = useCallback((newQuery: string) => {
+    setQuery(newQuery);
+  }, []);
+
+  const handleSetFilters = useCallback((newFilters: SearchFilters) => {
+    setFilters(newFilters);
+  }, []);
+
   const clearFilters = useCallback(() => {
     setFilters({});
   }, []);
@@ -35,20 +50,30 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
     setFilters({});
   }, []);
 
+  // Memoize context value to prevent re-renders when other state changes
+  const value = useMemo(
+    () => ({
+      query,
+      setQuery: handleSetQuery,
+      debouncedQuery,
+      filters,
+      setFilters: handleSetFilters,
+      clearFilters,
+      clearSearch,
+    }),
+    [
+      query,
+      debouncedQuery,
+      filters,
+      handleSetQuery,
+      handleSetFilters,
+      clearFilters,
+      clearSearch,
+    ],
+  );
+
   return (
-    <SearchContext.Provider
-      value={{
-        query,
-        setQuery,
-        debouncedQuery,
-        filters,
-        setFilters,
-        clearFilters,
-        clearSearch,
-      }}
-    >
-      {children}
-    </SearchContext.Provider>
+    <SearchContext.Provider value={value}>{children}</SearchContext.Provider>
   );
 }
 
