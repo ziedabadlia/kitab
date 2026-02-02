@@ -1,28 +1,31 @@
-import { Role } from "@/features/auth/auth";
 import { UserRole } from "@/lib/generated/prisma/enums";
-import { DefaultSession, User } from "next-auth";
+import { UserStatus } from "@prisma/client";
+import { DefaultSession } from "next-auth";
+import { JWT } from "next-auth/jwt";
+
+// If you have a Status enum in Prisma, import it here:
+// import { Status } from "@prisma/client";
 
 declare module "next-auth" {
   interface Session {
     user: {
+      id: string;
       role: UserRole;
-      // isTwoFactorEnabled: boolean;
+      status: UserStatus;
       name: string;
       email: string;
-      // isOAuth: boolean;
+      image: string | null;
     } & DefaultSession["user"];
   }
 }
 
-import { JWT } from "next-auth/jwt";
-
 declare module "next-auth/jwt" {
-  /** Returned by the `jwt` callback and `auth`, when using JWT sessions */
   interface JWT {
-    // isOAuth: boolean;
+    id: string;
     role: UserRole;
-    // isTwoFactorEnabled: boolean;
+    status: UserStatus;
     name: string;
     email: string;
+    image: string | null;
   }
 }

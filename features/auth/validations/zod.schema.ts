@@ -25,18 +25,20 @@ export const registrationSchema = z.object({
     z
       .any()
       .refine(
-        (val) => val && val.length > 0,
+        (files) => files?.length > 0,
         "University ID Card file is required.",
       )
-      .refine((val) => {
-        if (typeof val === "string") return true;
-        return val?.[0]?.size <= 5000000;
+      .refine((files) => {
+        if (typeof files === "string") return true;
+        const file = files?.[0];
+        return file ? file.size <= 5000000 : true;
       }, "Max file size is 5MB.")
-      .refine((val) => {
-        if (typeof val === "string") return true;
-        return ["image/jpeg", "image/png", "application/pdf"].includes(
-          val?.[0]?.type,
-        );
+      .refine((files) => {
+        if (typeof files === "string") return true;
+        const file = files?.[0];
+        return file
+          ? ["image/jpeg", "image/png", "application/pdf"].includes(file.type)
+          : true;
       }, "Only JPG, PNG, and PDF files are accepted."),
   ]),
 

@@ -7,6 +7,7 @@ import { loginSchema } from "../validations/zod.schema";
 import { getUserByEmail } from "../data/user";
 import { DEFAULT_LOGIN_REDIRECT, DEFAULT_ADMIN_LOGIN_REDIRECT } from "@/routes";
 import { Role } from "@prisma/client";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 
 export const login = async (values: z.infer<typeof loginSchema>) => {
   const validatedFields = loginSchema.safeParse(values);
@@ -32,7 +33,7 @@ export const login = async (values: z.infer<typeof loginSchema>) => {
       email,
       password,
       redirectTo:
-        existingUser.role === Role.ADMIN
+        existingUser.role === "ADMIN"
           ? DEFAULT_ADMIN_LOGIN_REDIRECT
           : DEFAULT_LOGIN_REDIRECT,
     });
@@ -48,6 +49,11 @@ export const login = async (values: z.infer<typeof loginSchema>) => {
       }
     }
 
-    throw error;
+    if (isRedirectError(error)) {
+      throw error;
+    }
+
+    console.error(error);
+    return { error: "Internal Server Error" };
   }
 };
