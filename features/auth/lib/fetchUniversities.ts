@@ -1,4 +1,4 @@
-import { UniversityOption } from "../types";
+import { UniversityOption } from "../types/university";
 
 export const fetchUniversities = async (): Promise<UniversityOption[]> => {
   // Replace this placeholder with an actual API call (e.g., using axios or fetch)
