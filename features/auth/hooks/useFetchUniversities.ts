@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { fetchUniversities } from "../lib/fetchUniversities";
-import { UniversityOption } from "../types";
 
 const useFetchUniversities = (): {
-  universities: UniversityOption[];
+  universities: string[];
   isLoadingOptions: boolean;
 } => {
-  const [universities, setUniversities] = useState<UniversityOption[]>([]);
+  const [universities, setUniversities] = useState<string[]>([]);
   const [isLoadingOptions, setIsLoadingOptions] = useState(true);
   useEffect(() => {
     const loadUniversities = async () => {
