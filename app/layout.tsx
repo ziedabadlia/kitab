@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans } from "next/font/google";
+import { Bebas_Neue } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import Providers from "@/components/Providers";
+
+const bebasNeue = Bebas_Neue({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-bebas-neue",
+});
 
 const ibmPlexSans = IBM_Plex_Sans({
   weight: ["400", "500", "600", "700"],
@@ -21,8 +29,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang='en'>
-      <body className={`${ibmPlexSans.variable} antialiased`}>
-        {children}
+      <body
+        className={`${ibmPlexSans.variable} ${bebasNeue.variable} antialiased`}
+      >
+        <Providers>{children}</Providers>
+
         <Toaster richColors position='top-center' />
       </body>
     </html>

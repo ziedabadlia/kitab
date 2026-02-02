@@ -1,5 +1,7 @@
+"use client";
+
 import Image from "next/image";
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useDropzone, FileRejection, DropzoneOptions } from "react-dropzone";
 import {
   ControllerRenderProps,
@@ -9,10 +11,9 @@ import {
 } from "react-hook-form";
 import uploadIcon from "../assets/svgs/uplaod-icon.svg";
 
-// Generic TFieldValues allows this component to work with any form schema
 interface FileDropzoneProps<
   TFieldValues extends FieldValues,
-  TName extends Path<TFieldValues>
+  TName extends Path<TFieldValues>,
 > {
   field: ControllerRenderProps<TFieldValues, TName>;
   form: UseFormReturn<TFieldValues>;
@@ -20,35 +21,54 @@ interface FileDropzoneProps<
 
 const FileDropzone = <
   TFieldValues extends FieldValues,
-  TName extends Path<TFieldValues>
+  TName extends Path<TFieldValues>,
 >({
   field,
   form,
 }: FileDropzoneProps<TFieldValues, TName>) => {
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
-      // Set the value in React Hook Form
-      // We use acceptedFiles directly as an array of File objects
       field.onChange(acceptedFiles);
+      form.clearErrors(field.name);
+      form.trigger(field.name);
     },
-    [field]
+    [field, form],
   );
 
-  const dropzoneOptions: DropzoneOptions = {
-    onDrop,
-    accept: {
-      "image/jpeg": [".jpeg", ".jpg"],
-      "image/png": [".png"],
-      "application/pdf": [".pdf"],
+  const onDropRejected = useCallback(
+    (fileRejections: FileRejection[]) => {
+      const error = fileRejections[0]?.errors[0];
+      if (!error) return;
+
+      let message = "Invalid file.";
+      if (error.code === "file-too-large") message = "Max file size is 5MB.";
+      if (error.code === "file-invalid-type")
+        message = "Only JPG, PNG, and PDF files are accepted.";
+
+      form.setError(field.name, { type: "manual", message } as any);
     },
-    maxFiles: 1,
-    maxSize: 5000000,
-  };
+    [form, field.name],
+  );
+
+  // Define options inside the component to use the callbacks
+  const dropzoneOptions: DropzoneOptions = useMemo(
+    () => ({
+      onDrop,
+      onDropRejected,
+      accept: {
+        "image/jpeg": [".jpeg", ".jpg"],
+        "image/png": [".png"],
+        "application/pdf": [".pdf"],
+      },
+      maxFiles: 1,
+      maxSize: 5000000,
+    }),
+    [onDrop, onDropRejected],
+  );
 
   const { getRootProps, getInputProps, isDragActive } =
     useDropzone(dropzoneOptions);
 
-  // Cast field.value as File[] | undefined to access properties safely
   const files = field.value as File[] | undefined;
   const fileName = files?.[0]?.name;
 
@@ -56,23 +76,24 @@ const FileDropzone = <
     <div
       {...getRootProps()}
       className={`
-        py-2.5 px-5 text-center rounded-lg cursor-pointer transition-colors
-        ${isDragActive ? " bg-slate-700/50" : " bg-[#232839]"}
+        py-2.5 px-5 text-center rounded-lg cursor-pointer transition-colors border-2 border-dashed
+        ${isDragActive ? "bg-slate-700/50 border-[#E7C9A5]" : "bg-[#232839] border-transparent"}
       `}
     >
       <input {...getInputProps()} />
 
       {fileName ? (
         <div className='flex items-center justify-center gap-2'>
-          <span className='text-indigo-300 text-sm truncate max-w-full italic'>
+          <span className='text-indigo-300 text-sm truncate max-w-[200px] italic'>
             {fileName}
           </span>
           <button
             type='button'
-            className='text-xs text-red-400 hover:underline'
+            className='text-xs text-red-400 hover:underline font-semibold'
             onClick={(e) => {
-              e.stopPropagation(); // Prevent opening the file dialog
+              e.stopPropagation();
               field.onChange(undefined);
+              form.trigger(field.name);
             }}
           >
             Remove file
@@ -84,7 +105,7 @@ const FileDropzone = <
             <Image src={uploadIcon} height={18} width={18} alt='Upload Icon' />
           </div>
           <p className='text-[#D6E0FF] text-[16px] leading-6 font-normal'>
-            {isDragActive ? "Upload a file here..." : "Upload a file"}
+            {isDragActive ? "Drop the file here..." : "Upload a file"}
           </p>
         </div>
       )}
