@@ -13,6 +13,9 @@ export default async function UserLayout({
 }) {
   const session = await auth();
   if (!session) redirect("/login");
+  if (session?.user?.role === "ADMIN") {
+    redirect("/admin");
+  }
 
   const isRestricted =
     session.user.role === "STUDENT" && session.user.status !== "ACCEPTED";
