@@ -3,6 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prebuild": "npm run check",
+    "check": "npm run check:types && npm run check:lint && npm run check:prisma",
+    "check:types": "tsc --noEmit",
+    "check:lint": "next lint",
+    "check:prisma": "prisma generate && prisma validate",
+    "build:prod": "npm run check && next build",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
