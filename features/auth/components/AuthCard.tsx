@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Image from "next/image";
-import logo from "../../../public/logo.svg";
+import logo from "@/public/logo.svg";
 
 const AuthCard = ({
   title,
