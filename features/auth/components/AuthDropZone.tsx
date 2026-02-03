@@ -9,7 +9,7 @@ import {
   FieldValues,
   Path,
 } from "react-hook-form";
-import uploadIcon from "@/assets/svgs/upload-icon.svg";
+import uploadIcon from "../assets/svgs/uplaod-icon.svg";
 
 interface FileDropzoneProps<
   TFieldValues extends FieldValues,
