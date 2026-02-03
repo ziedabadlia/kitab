@@ -110,6 +110,10 @@ model Student {
   studentIdNumber         String         @unique @map("student_id_number")
   universityName          String         @map("university_name")
   universityIdCardUrl     String         @map("university_id_card_url")
+  dateOfBirth             DateTime?      @map("date_of_birth")
+  department              String?   
+  contactNo               String?       @map("contact_no")
+  address                 String?
   generatedIdCardUrl      String?        @map("generated_id_card_url")
   createdAt               DateTime       @default(now()) @map("created_at")
   updatedAt               DateTime       @updatedAt @map("updated_at")
