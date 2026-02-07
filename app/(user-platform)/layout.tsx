@@ -30,7 +30,10 @@ export default async function UserLayout({
         priority
       />
       <div className='relative z-10'>
-        <Navbar userName={session.user.name} />
+        <Navbar
+          userName={session.user.name}
+          profilePictureUrl={session.user.profilePictureUrl!}
+        />
         <div className='mt-24 px-5 md:px-10 lg:px-20'>
           {isRestricted && (
             <Announcement

@@ -1,18 +1,22 @@
 "use client";
 
 import { useSearch } from "@/features/search/contexts/SearchContext";
-import { SearchX } from "lucide-react";
+import notFoundSvg from "../assets/svg/notFound.svg";
+import Image from "next/image";
 
 export default function EmptyState() {
   const { query, clearSearch } = useSearch();
 
   return (
-    <div className='flex flex-col items-center justify-center py-20 px-4'>
-      <div className='relative mb-6'>
-        <div className='absolute inset-0 bg-blue-500/20 blur-3xl rounded-full' />
-        <div className='relative w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center border border-slate-700'>
-          <SearchX className='w-10 h-10 text-slate-400' />
-        </div>
+    <div className='flex flex-col items-center justify-center py-0 px-4'>
+      <div className='relative mb- w-[150px] h-[150px] sm:w-[180px] sm:h-[180px] md:w-[220px] md:h-[220px] lg:w-[280px] lg:h-[280px]'>
+        <Image
+          src={notFoundSvg}
+          fill
+          alt='No search results illustration'
+          className='object-contain'
+          priority
+        />
       </div>
 
       <h3 className='text-xl font-semibold text-white mb-2'>
@@ -26,7 +30,7 @@ export default function EmptyState() {
 
       <button
         onClick={clearSearch}
-        className='px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-lg transition-all duration-200 shadow-lg shadow-blue-500/25'
+        className='font-bebas w-full text-xl sm:w-fit px-12 py-3.5 bg-[#E7C9A5] hover:bg-[#d4b592] text-slate-900 font-bold uppercase tracking-widest rounded-md transition-all duration-200 shadow-lg active:scale-[0.98]'
       >
         Clear Search
       </button>

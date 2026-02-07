@@ -14,9 +14,14 @@ declare module "next-auth" {
       status: UserStatus;
       name: string;
       email: string;
-      image: string | null;
+      profilePictureUrl: string | null;
     } & DefaultSession["user"];
   }
+}
+
+interface User {
+  role: Role;
+  status: UserStatus;
 }
 
 declare module "next-auth/jwt" {

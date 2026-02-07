@@ -101,7 +101,6 @@ const prefixTitles = [
 async function main() {
   console.log("🌱 Starting database seed...");
 
-  // Check if we already have books
   const existingCount = await prisma.book.count();
   if (existingCount > 10) {
     console.log(
@@ -115,10 +114,8 @@ async function main() {
 
   const booksToCreate = [];
 
-  // Generate 20 variations of each template (80 total books)
   for (let i = 0; i < 20; i++) {
     for (const template of bookTemplates) {
-      // Create variations
       const isBase = i === 0;
       const title = isBase
         ? template.title
@@ -130,7 +127,6 @@ async function main() {
         ? template.isbn
         : `${template.isbn.slice(0, -2)}${String(i).padStart(2, "0")}`;
 
-      // Vary borrowCount for realistic pagination (some popular, some not)
       const borrowCountVariation = Math.floor(Math.random() * 100);
 
       booksToCreate.push({
@@ -154,7 +150,6 @@ async function main() {
     }
   }
 
-  // Insert in batches to avoid overwhelming the DB
   const batchSize = 20;
   for (let i = 0; i < booksToCreate.length; i += batchSize) {
     const batch = booksToCreate.slice(i, i + batchSize);
@@ -169,14 +164,12 @@ async function main() {
 
   console.log(`🎉 Successfully seeded ${booksToCreate.length} books!`);
 
-  // Assign random categories to books for filter testing
   const categories = await prisma.category.findMany();
   if (categories.length > 0) {
     console.log("🔗 Assigning categories to books...");
     const allBooks = await prisma.book.findMany({ select: { id: true } });
 
     for (const book of allBooks) {
-      // Assign 1-2 random categories per book
       const numCategories = Math.floor(Math.random() * 2) + 1;
       const shuffled = categories.sort(() => 0.5 - Math.random());
       const selected = shuffled.slice(0, numCategories);
