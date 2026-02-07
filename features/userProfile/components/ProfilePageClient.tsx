@@ -30,12 +30,9 @@ export default function ProfilePageClient() {
   return (
     <main className='container mx-auto px-4 py-10'>
       <div className='flex flex-col lg:flex-row gap-10 items-start'>
-        {/* Left: User Identity & Membership Card */}
         <section className='w-full lg:w-[400px] lg:sticky lg:top-24'>
           <ProfileInfo profile={data.profile} />
         </section>
-
-        {/* Right: Borrowing History & Books */}
         <section className='flex-1 w-full'>
           <BorrowedBooks books={data.borrowedBooks} />
         </section>

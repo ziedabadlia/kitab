@@ -8,10 +8,8 @@ import ProfilePageClient from "./ProfilePageClient";
 export default async function ProfilePage() {
   const session = await auth();
 
-  // Redirect to login if no session
   if (!session) redirect("/login");
 
-  // Check if user status is ACCEPTED
   if (session.user.status !== UserStatus.ACCEPTED) {
     return (
       <RestrictedAccess
@@ -22,6 +20,5 @@ export default async function ProfilePage() {
     );
   }
 
-  // Pass session data to client component
   return <ProfilePageClient />;
 }

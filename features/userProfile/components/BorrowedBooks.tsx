@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Calendar, CheckCircle, AlertCircle } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { BorrowedBook } from "../types";
 import BookFrame from "@/components/BookFrame";
 
@@ -20,7 +20,7 @@ export default function BorrowedBooks({ books }: { books: BorrowedBook[] }) {
           <div key={book.id} className='relative group'>
             <div className='bg-[#161926] rounded-2xl p-4 border border-slate-700/50 flex gap-5 hover:border-[#E7C9A5]/30 transition-all'>
               {/* BOOK COVER WITH SVG FRAME */}
-              <div className='relative w-24 h-36 flex-shrink-0'>
+              <div className='relative w-24 h-36 shrink-0'>
                 <BookFrame coverColor={book.coverColor} />
                 <div className='absolute inset-[3px] rounded-sm overflow-hidden z-0'>
                   {book.coverImageUrl && (
