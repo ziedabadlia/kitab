@@ -1,7 +1,9 @@
 "use client";
 
+import { useRef, useState } from "react";
 import Image from "next/image";
-import { Download, Share2 } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
+import { toPng } from "html-to-image";
 
 interface SecureIdCardProps {
   profile: any;
@@ -9,118 +11,108 @@ interface SecureIdCardProps {
 }
 
 export default function SecureIdCard({ profile }: SecureIdCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+
   if (!profile || !profile.generatedIdCardUrl) return null;
+
+  const handleDownloadPNG = async () => {
+    if (!cardRef.current) return;
+    setIsDownloading(true);
+
+    try {
+      // html-to-image handles oklch and lab colors much better than html2canvas
+      const dataUrl = await toPng(cardRef.current, {
+        cacheBust: true,
+        pixelRatio: 3, // Ensures the PNG is high-resolution for printing
+      });
+
+      const link = document.createElement("a");
+      link.download = `${profile.fullName.replace(/\s+/g, "_")}_ID_Card.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error("PNG Generation failed:", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   return (
     <div className='w-full flex justify-start'>
       <div className='w-full md:w-[80%] lg:w-full'>
-        {/* THE CARD CONTAINER - Adaptive Layout */}
-        <div className='w-full rounded-[1.5rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10 select-none bg-linear-to-br from-[#1a1d3a] via-[#0f1729] to-[#1a3a3a]'>
-          {/* Card Layout Container */}
+        {/* THE CARD - Hardcoded hex colors in style to be safe */}
+        <div
+          ref={cardRef}
+          style={{
+            background:
+              "linear-gradient(135deg, #2A1B3D 0%, #12141D 50%, #0D3B3F 100%)",
+          }}
+          className='w-full rounded-[1.5rem] overflow-hidden shadow-2xl border border-white/10 select-none'
+        >
           <div className='relative flex flex-col'>
-            {/* HEADER SECTION */}
-            <div className='px-3 sm:px-4 py-2.5 sm:py-3 flex items-center gap-2 sm:gap-3 border-b border-white/10'>
-              {/* Logo */}
-              <div className='relative w-10 h-10 sm:w-12 sm:h-12 shrink-0'>
+            {/* Header */}
+            <div className='px-4 py-3 flex items-center gap-3 border-b border-white/10'>
+              <div className='relative w-12 h-12 shrink-0'>
                 <Image
                   src='/logo.svg'
                   fill
                   alt='Logo'
-                  className='object-contain drop-shadow-xl'
+                  className='object-contain'
                   priority
                 />
               </div>
-
-              {/* University Info */}
               <div className='flex-1 min-w-0'>
-                <h2 className='text-white font-bold text-xs sm:text-sm leading-tight tracking-tight truncate'>
+                <h2 className='text-white font-bold text-sm leading-tight truncate'>
                   {profile.universityName}
                 </h2>
-                <p className='text-[#E7C9A5] text-[8px] sm:text-[9px] font-medium tracking-wide mt-0.5 truncate'>
+                <p className='text-[#E7C9A5] text-[9px] font-medium tracking-wide'>
                   Empowering Dreams, Inspiring Futures
                 </p>
               </div>
             </div>
 
-            {/* CONTENT SECTION - Changes layout based on screen width */}
-            <div className='p-3 sm:p-4'>
-              <div className='flex flex-col gap-4 items-center'>
-                {/* Photo */}
-                <div className='relative w-40 h-40 rounded-xl border-2 border-[#d4b592] overflow-hidden shadow-2xl'>
-                  <Image
-                    src={
-                      profile.profilePictureUrl || "/images/default-avatar.png"
-                    }
-                    fill
-                    className='object-cover'
-                    alt='Student Photo'
-                  />
-                </div>
+            {/* Photo & Info */}
+            <div className='p-4 space-y-4 flex flex-col items-center'>
+              <div className='relative w-40 h-40 rounded-xl border-2 border-[#d4b592] overflow-hidden shadow-2xl'>
+                <Image
+                  src={
+                    profile.profilePictureUrl || "/images/default-avatar.png"
+                  }
+                  fill
+                  className='object-cover'
+                  alt='Student'
+                />
+              </div>
 
-                {/* Info */}
-                <div className='bg-black/20 backdrop-blur-sm rounded-xl p-6 border border-white/10 min-w-0 w-full flex justify-center'>
-                  <div className='space-y-2 flex flex-col w-fit'>
-                    <InfoRowHorizontal
-                      label='Student ID'
-                      value={profile.studentIdNumber}
-                    />
-                    <InfoRowHorizontal
-                      label='Full Name'
-                      value={profile.fullName}
-                    />
-                    <InfoRowHorizontal
-                      label='Department'
-                      value={profile.department || "N/A"}
-                    />
-                    <InfoRowHorizontal
-                      label='Date of Birth'
-                      value={
-                        profile.dateOfBirth
-                          ? new Date(profile.dateOfBirth).toLocaleDateString(
-                              "en-US",
-                              {
-                                month: "2-digit",
-                                day: "2-digit",
-                                year: "numeric",
-                              },
-                            )
-                          : "N/A"
-                      }
-                    />
-                    <InfoRowHorizontal
-                      label='Contact'
-                      value={profile.contactNo || "N/A"}
-                    />
-                  </div>
+              <div className='bg-black/20 backdrop-blur-sm rounded-xl p-6 border border-white/10 w-full'>
+                <div className='space-y-2 flex flex-col items-center text-center'>
+                  <InfoRow label='Student ID' value={profile.studentIdNumber} />
+                  <InfoRow label='Full Name' value={profile.fullName} />
+                  <InfoRow
+                    label='Department'
+                    value={profile.department || "N/A"}
+                  />
+                  <InfoRow label='Contact' value={profile.contactNo || "N/A"} />
                 </div>
               </div>
             </div>
 
-            {/* FOOTER SECTION */}
-            <div className='px-3 sm:px-4 py-2 sm:py-2.5 border-t border-white/10 bg-black/20 backdrop-blur-sm'>
-              <div className='flex items-center justify-between gap-2'>
-                {/* Contact Info */}
-                <div className='flex-1 min-w-0 space-y-0.5'>
-                  <p className='text-white/70 text-[8px] sm:text-[9px] font-medium truncate'>
+            {/* Footer */}
+            <div className='px-4 py-2.5 border-t border-white/10 bg-black/20'>
+              <div className='flex items-center justify-between'>
+                <div className='text-[9px] space-y-0.5'>
+                  <p className='text-white/70'>
                     University No:{" "}
-                    <span className='text-white font-semibold'>
-                      +1 (800) 456-7890
-                    </span>
+                    <span className='text-white'>+1 (800) 456-7890</span>
                   </p>
-                  <p className='text-white/70 text-[8px] sm:text-[9px] font-medium truncate'>
-                    Website:{" "}
-                    <span className='text-[#E7C9A5] font-semibold'>
-                      www.kitab.edu
-                    </span>
-                  </p>
+                  <p className='text-[#E7C9A5]'>www.kitab.edu</p>
                 </div>
-
-                {/* QR Code - Always in footer */}
-                <div className='relative w-12 h-12 sm:w-14 sm:h-14 bg-white p-1 sm:p-1.5 rounded-lg shadow-2xl flex-shrink-0'>
+                <div className='relative w-14 h-14 bg-white p-1 rounded-lg'>
                   <Image
                     src={profile.generatedIdCardUrl}
                     fill
-                    alt='Verification QR'
+                    alt='QR'
                     className='object-contain'
                   />
                 </div>
@@ -129,30 +121,34 @@ export default function SecureIdCard({ profile }: SecureIdCardProps) {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className='flex flex-col sm:flex-row gap-3 mt-4'>
-          <button className='flex-1 bg-linear-to-r from-[#1a1d2e] to-[#252941] border border-slate-700 text-white py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 hover:border-[#E7C9A5]/50 hover:shadow-lg hover:shadow-[#E7C9A5]/10 transition-all duration-300 group'>
-            <Download className='w-4 h-4 text-[#E7C9A5] group-hover:scale-110 transition-transform' />
-            <span>Download PDF</span>
-          </button>
-          <button className='flex-1 bg-linear-to-r from-[#E7C9A5] to-[#d4b592] text-[#1a1d2e] py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-[#E7C9A5]/30 transition-all duration-300 group'>
-            <Share2 className='w-4 h-4 group-hover:scale-110 transition-transform' />
-            <span>Share Card</span>
-          </button>
-        </div>
+        {/* Action Button */}
+        <button
+          onClick={handleDownloadPNG}
+          disabled={isDownloading}
+          className='w-full mt-4 bg-linear-to-r from-[#1a1d2e] to-[#252941] border border-slate-700 text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:border-[#E7C9A5]/50 hover:shadow-lg transition-all disabled:opacity-50'
+        >
+          {isDownloading ? (
+            <Loader2 className='w-4 h-4 animate-spin text-[#E7C9A5]' />
+          ) : (
+            <Download className='w-4 h-4 text-[#E7C9A5]' />
+          )}
+          <span>
+            {isDownloading ? "Generating PNG..." : "Download ID Card (PNG)"}
+          </span>
+        </button>
       </div>
     </div>
   );
 }
 
-function InfoRowHorizontal({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className='flex items-baseline gap-2'>
-      <span className='text-slate-300 text-md font-medium whitespace-nowrap  shrink-0'>
+      <span className='text-slate-300 text-xs font-medium shrink-0'>
         {label}
       </span>
-      <span className='text-[#E7C9A5] font-bold text-md shrink-0'>:</span>
-      <span className='text-white text-md font-semibold flex-1'>{value}</span>
+      <span className='text-[#E7C9A5] font-bold'>:</span>
+      <span className='text-white text-xs font-semibold'>{value}</span>
     </div>
   );
 }
