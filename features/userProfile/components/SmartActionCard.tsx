@@ -17,7 +17,7 @@ export default function SmartActionCard({
       className={`w-full group relative overflow-hidden rounded-3xl p-6 border transition-all duration-300 ${
         hasCard
           ? "bg-[#12141D] border-slate-800 hover:border-[#E7C9A5]/40"
-          : "bg-gradient-to-br from-[#1a1d2e] to-[#0f1117] border-[#E7C9A5]/20 hover:border-[#E7C9A5]/50 shadow-xl shadow-[#E7C9A5]/5"
+          : "bg-linear-to-br from-[#1a1d2e] to-[#0f1117] border-[#E7C9A5]/20 hover:border-[#E7C9A5]/50 shadow-xl shadow-[#E7C9A5]/5"
       }`}
     >
       <div className='flex items-center justify-between relative z-10'>

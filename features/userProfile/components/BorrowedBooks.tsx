@@ -1,69 +1,46 @@
 "use client";
 
-import Image from "next/image";
-import { Calendar } from "lucide-react";
 import { BorrowedBook } from "../types";
-import BookFrame from "@/components/BookFrame";
+import NoResults from "./NoREsult";
+import { useBorrowedBooksLogic } from "../hooks/useBorrowedBooksLogic";
+import BorrowedBooksHeader from "./BorrowedBooks/BorrowedBooksHeader";
+import BorrowedBooksGrid from "./BorrowedBooks/BorrowedBooksGrid";
+import ReceiptModal from "./ReceiptModal";
 
-export default function BorrowedBooks({ books }: { books: BorrowedBook[] }) {
+interface BorrowedBooksProps {
+  books: BorrowedBook[];
+}
+
+export default function BorrowedBooks({ books }: BorrowedBooksProps) {
+  const { isEmpty, selectedReceiptBook, handleReceiptClick, handleCloseModal } =
+    useBorrowedBooksLogic(books);
+
+  if (isEmpty) {
+    return (
+      <div className='bg-[#0F1117] rounded-3xl p-8 border border-slate-800/50 min-h-[500px] flex items-center justify-center'>
+        <NoResults
+          title='No Results Found'
+          description="We couldn't find any books. Try adjusting your filters or check back later."
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className='bg-[#0F1117] rounded-3xl p-8 border border-slate-800/50 min-h-full'>
-      <div className='flex justify-between items-center mb-8'>
-        <h2 className='text-2xl font-bold text-white'>Borrowed Books</h2>
-        <button className='text-[#E7C9A5] text-sm font-medium hover:underline'>
-          View All
-        </button>
-      </div>
+    <div className='space-y-8'>
+      <BorrowedBooksHeader bookCount={books.length} />
 
-      <div className='grid grid-cols-1 xl:grid-cols-2 gap-6'>
-        {books.map((book) => (
-          <div key={book.id} className='relative group'>
-            <div className='bg-[#161926] rounded-2xl p-4 border border-slate-700/50 flex gap-5 hover:border-[#E7C9A5]/30 transition-all'>
-              {/* BOOK COVER WITH SVG FRAME */}
-              <div className='relative w-24 h-36 shrink-0'>
-                <BookFrame coverColor={book.coverColor} />
-                <div className='absolute inset-[3px] rounded-sm overflow-hidden z-0'>
-                  {book.coverImageUrl && (
-                    <Image
-                      src={book.coverImageUrl}
-                      alt={book.title}
-                      fill
-                      className='object-cover'
-                    />
-                  )}
-                </div>
-              </div>
+      {/* Grid Layout */}
+      <BorrowedBooksGrid books={books} onReceiptClick={handleReceiptClick} />
 
-              {/* INFO */}
-              <div className='flex flex-col justify-between py-1 flex-1 min-w-0'>
-                <div>
-                  <h3 className='text-white font-bold text-lg truncate leading-tight'>
-                    {book.title}
-                  </h3>
-                  <p className='text-slate-400 text-sm mt-1 italic'>
-                    By {book.author}
-                  </p>
-                </div>
-
-                <div className='mt-4 space-y-2'>
-                  <div className='flex items-center gap-2 text-xs text-slate-400'>
-                    <Calendar className='w-3.5 h-3.5 text-[#E7C9A5]' />
-                    <span>
-                      Due Date: {new Date(book.dueDate).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className='flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#05070A]/50 w-fit'>
-                    <div className='w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' />
-                    <span className='text-emerald-400 text-xs font-medium'>
-                      12 Days Left
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Render Receipt Modal */}
+      {selectedReceiptBook && (
+        <ReceiptModal
+          isOpen={!!selectedReceiptBook}
+          onClose={handleCloseModal}
+          book={selectedReceiptBook}
+        />
+      )}
     </div>
   );
 }

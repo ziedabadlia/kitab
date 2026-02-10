@@ -1,17 +1,23 @@
 "use client";
 
-import { GraduationCap, Hash, BadgeCheck, MapPin, Phone } from "lucide-react";
+import { GraduationCap, Hash, MapPin, Phone } from "lucide-react";
 import ProfilePicture from "./ProfilePicture";
-import GenerateCardModal from "./GenerateCardModal";
-import { useIdCard } from "../hooks/useIdCard";
 import { StudentProfile } from "../types";
 import SecureIdCard from "./SecureCardId";
 import SmartActionCard from "./SmartActionCard";
 import DetailRow from "./DetailRow";
+import Image from "next/image";
+import VerifiedBafgeSvg from "@/assets/svg/VerifiedBadge.svg";
 
-export default function ProfileInfo({ profile }: { profile: StudentProfile }) {
-  const { showModal, setShowModal } = useIdCard(profile.id);
+interface ProfileInfoProps {
+  profile: StudentProfile;
+  onOpenCardModal: () => void;
+}
 
+export default function ProfileInfo({
+  profile,
+  onOpenCardModal,
+}: ProfileInfoProps) {
   return (
     <div className='space-y-8'>
       {/* Profile Header Card */}
@@ -24,16 +30,23 @@ export default function ProfileInfo({ profile }: { profile: StudentProfile }) {
           />
 
           <div className='mt-4 flex items-center gap-2'>
+            <Image
+              priority
+              alt='verified badge'
+              className='object-cover'
+              src={VerifiedBafgeSvg}
+              height={13}
+              width={13}
+            />
             <h2 className='text-2xl font-bold text-white tracking-tight'>
               {profile.fullName}
             </h2>
-            <BadgeCheck className='w-6 h-6 text-[#E7C9A5]' />
           </div>
           <p className='text-slate-500 font-medium'>{profile.email}</p>
 
           <div className='mt-3 px-4 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20'>
             <span className='text-emerald-400 text-xs font-bold uppercase tracking-wider'>
-              {profile.status} Student
+              Verified Student
             </span>
           </div>
         </div>
@@ -74,7 +87,7 @@ export default function ProfileInfo({ profile }: { profile: StudentProfile }) {
       {/* SMART ACTION UI ELEMENT */}
       <SmartActionCard
         hasCard={!!profile.generatedIdCardUrl}
-        onAction={() => setShowModal(true)}
+        onAction={onOpenCardModal}
       />
 
       {profile.generatedIdCardUrl && (
@@ -82,19 +95,8 @@ export default function ProfileInfo({ profile }: { profile: StudentProfile }) {
           <h3 className='text-slate-500 text-xs font-bold uppercase tracking-widest px-1 mb-4'>
             Your Digital Pass
           </h3>
-          <SecureIdCard
-            profile={profile}
-            onGenerate={() => setShowModal(true)}
-          />
+          <SecureIdCard profile={profile} onGenerate={onOpenCardModal} />
         </div>
-      )}
-
-      {profile && (
-        <GenerateCardModal
-          profile={profile}
-          isOpen={showModal}
-          onClose={() => setShowModal(false)}
-        />
       )}
     </div>
   );

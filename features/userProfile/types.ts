@@ -6,7 +6,7 @@ export interface BorrowedBook {
   author: string;
   coverImageUrl: string | null;
   coverColor: string;
-  categories: { category: { name: string } }[];
+  categories: { name: string }[];
   borrowedAt: Date;
   dueDate: Date;
   returnedAt: Date | null;

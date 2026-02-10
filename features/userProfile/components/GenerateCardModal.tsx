@@ -24,6 +24,18 @@ export default function GenerateCardModal({ profile, isOpen, onClose }: Props) {
     address: profile.address || "",
   });
 
+  // Handle body scroll and modal lifecycle
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
   // Update internal state if the profile data changes (e.g., after a successful mutation)
   useEffect(() => {
     setFormData({
@@ -39,8 +51,8 @@ export default function GenerateCardModal({ profile, isOpen, onClose }: Props) {
   if (!isOpen) return null;
 
   return (
-    <div className='fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4'>
-      <div className='bg-[#0F1117] rounded-3xl w-full max-w-lg border border-slate-700 shadow-2xl overflow-hidden'>
+    <div className='fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4 overflow-hidden'>
+      <div className='bg-[#0F1117] rounded-3xl w-full max-w-lg max-h-[90vh] border border-slate-700 shadow-2xl overflow-hidden flex flex-col'>
         <div className='bg-[#E7C9A5] p-6 flex justify-between items-center'>
           <div>
             <h3 className='text-xl font-bold text-[#05070A]'>
@@ -52,7 +64,8 @@ export default function GenerateCardModal({ profile, isOpen, onClose }: Props) {
           </div>
           <button
             onClick={onClose}
-            className='p-2 hover:bg-black/5 rounded-full'
+            className='p-2 hover:bg-black/5 rounded-full transition-colors'
+            aria-label='Close modal'
           >
             <X className='w-6 h-6 text-[#05070A]' />
           </button>
@@ -64,7 +77,7 @@ export default function GenerateCardModal({ profile, isOpen, onClose }: Props) {
             await generate(formData);
             onClose(); // Close modal after successful update
           }}
-          className='p-8 space-y-6'
+          className='p-8 space-y-6 overflow-y-auto flex-1'
         >
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <InputField
