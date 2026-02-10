@@ -16,14 +16,6 @@ const AuthBackgroundImage = ({ children }: { children: React.ReactNode }) => {
         src={noise}
       />
 
-      {/* 2. Global Background Image */}
-      {/* <Image
-        fill
-        alt='auth-bg'
-        className='object-cover'
-        src={authBackgroundImage}
-      /> */}
-
       <div className='grid grid-cols-12 relative z-30 min-h-screen'>
         {/* 3. Left Side: Form/Content Area (6 cols on desktop) */}
         <div className='col-span-12 lg:col-span-6 min-h-screen w-full flex items-center justify-center p-4'>

@@ -25,10 +25,7 @@ export const {
       token.name = existingUser.fullName;
       token.email = existingUser.email;
       token.role = existingUser.role;
-      token.image = existingUser.profilePictureUrl;
-
-      // Resolve status: Admins are ACCEPTED by default.
-      // Students use their nested status.
+      token.profilePictureUrl = existingUser.profilePictureUrl;
       token.status =
         existingUser.role === "ADMIN"
           ? "ACCEPTED"
@@ -41,6 +38,7 @@ export const {
         session.user.id = token.sub as string;
         session.user.role = token.role as Role;
         session.user.status = token.status as UserStatus;
+        session.user.profilePictureUrl = token.profilePictureUrl as string;
       }
       return session;
     },

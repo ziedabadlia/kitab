@@ -1,12 +1,15 @@
-import React from "react";
+import React, { memo } from "react";
 
 interface BookFrameProps {
   coverColor?: string;
 }
 
-const BookFrame = ({ coverColor = "#012B48" }: BookFrameProps) => {
+const BookFrame = memo(({ coverColor = "#012B48" }: BookFrameProps) => {
   return (
-    <div className='relative w-full h-full pointer-events-none'>
+    <div
+      className='relative w-full h-full pointer-events-none'
+      style={{ "--cover-color": coverColor } as React.CSSProperties}
+    >
       <svg
         width='100%'
         height='100%'
@@ -21,15 +24,15 @@ const BookFrame = ({ coverColor = "#012B48" }: BookFrameProps) => {
         />
         <path
           d='M273.782 379.133H271.469V374.409H9.26286C4.25702 367.561 4.83143 355.724 4.83143 355.724C5.34563 336.179 32.3912 339.072 32.3912 339.072H266.134C268.205 339.072 270.088 338.23 271.468 336.871C272.892 335.47 273.782 333.521 273.782 331.371V7.71398C273.782 3.47825 270.341 0.0125981 266.134 0.0125981H32.3912C32.3912 0.0125981 5.91273 -1.26014 0 21.7795V354.864C0 385.54 18.5094 383.987 18.5094 383.987H273.782C275.029 383.779 275.981 383.332 275.999 381.948C276.034 379.327 273.782 379.133 273.782 379.133Z'
-          fill={coverColor}
+          fill='var(--cover-color)'
         />
         <path
           d='M32.3912 335.448V0.0125981C32.3912 0.0125981 5.91273 -1.26014 0 21.7795V354.864C0 354.864 3.8147e-06 334.283 32.3912 335.448Z'
-          fill={coverColor}
+          fill='var(--cover-color)'
         />
         <path
           d='M229.051 66.7363H64.7812V140.515H229.051V66.7363Z'
-          fill={coverColor}
+          fill='var(--cover-color)'
         />
         <path
           d='M12.2498 37.7802C16.7982 35.6306 21.6206 34.4897 25.4025 33.913C29.1847 33.3333 31.9215 33.3088 32.3095 33.3093H32.3493H32.3499L32.3652 33.3095H32.391V26.7082L32.3097 26.708C31.1779 26.7184 22.4511 26.7897 13.0237 30.3045C8.58522 31.9683 3.97573 34.4321 0 38.1065V48.4381C1.09958 46.5752 2.39421 44.9397 3.85014 43.5005C6.30714 41.083 9.21447 39.2117 12.2498 37.7802Z'
@@ -58,6 +61,8 @@ const BookFrame = ({ coverColor = "#012B48" }: BookFrameProps) => {
       </svg>
     </div>
   );
-};
+});
+
+BookFrame.displayName = "BookFrame";
 
 export default BookFrame;

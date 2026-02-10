@@ -11,13 +11,13 @@ import { logout } from "@/features/auth/actions/logout";
 
 interface NavbarProps {
   userName: string;
+  profilePictureUrl: string;
 }
 
-const Navbar = ({ userName }: NavbarProps) => {
+const Navbar = ({ userName, profilePictureUrl }: NavbarProps) => {
   const [hasScrolled, setHasScrolled] = useState(false);
   const pathname = usePathname();
 
-  // Memoize scroll handler to prevent recreating on every render
   const handleScroll = useCallback(() => {
     setHasScrolled(window.scrollY > 0);
   }, []);
@@ -27,7 +27,6 @@ const Navbar = ({ userName }: NavbarProps) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
-  // Memoize navbar classes to prevent recalculating on every render
   const navClasses = useMemo(
     () =>
       cn(
@@ -39,7 +38,6 @@ const Navbar = ({ userName }: NavbarProps) => {
     [hasScrolled],
   );
 
-  // Memoize home link classes
   const homeLinkClasses = useMemo(
     () =>
       cn(
@@ -49,7 +47,6 @@ const Navbar = ({ userName }: NavbarProps) => {
     [pathname],
   );
 
-  // Memoize search link classes
   const searchLinkClasses = useMemo(
     () =>
       cn(
@@ -87,7 +84,18 @@ const Navbar = ({ userName }: NavbarProps) => {
           {/* User Profile Avatar */}
           <Link href='/profile' className='flex items-center gap-2 group'>
             <div className='w-8 h-8 rounded-full bg-[#A3E635] flex items-center justify-center text-[#05070A] font-bold text-xs ring-2 ring-transparent group-hover:ring-[#E7C9A5] transition-all'>
-              {userName?.slice(0, 2).toUpperCase() || "AH"}
+              {profilePictureUrl ? (
+                <Image
+                  src={profilePictureUrl}
+                  alt={userName}
+                  width={32}
+                  height={32}
+                  className='w-full h-full object-cover rounded-full'
+                  priority
+                />
+              ) : (
+                userName?.slice(0, 2).toUpperCase()
+              )}
             </div>
             <span className='text-white text-sm font-semibold hidden md:block'>
               {userName || "Adrian"}
