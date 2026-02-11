@@ -5,6 +5,7 @@ import starSvg from "@/assets/svg/star.svg";
 import BookCover from "./BookCover";
 import Image from "next/image";
 import { Book, Prisma, Role, UserStatus } from "@prisma/client";
+import BookLink from "./BookLink";
 
 type BookWithCategories = Prisma.BookGetPayload<{
   include: {
@@ -25,9 +26,11 @@ const BookSpotlight = ({ book, status, role }: Props) => {
   return (
     <section className='relative flex flex-col-reverse lg:flex-row items-start justify-between gap-16 lg:gap-8 mt-10 md:mt-20'>
       <div className='flex-1 space-y-5 z-10 w-full'>
-        <h1 className='text-5xl md:text-7xl font-bold text-white leading-[1.1] max-w-xl'>
-          {book.title}
-        </h1>
+        <BookLink id={book.id} title={book.title}>
+          <h1 className='text-5xl md:text-7xl font-bold text-white leading-[1.1] max-w-xl'>
+            {book.title}
+          </h1>
+        </BookLink>
 
         <div className='flex flex-wrap items-center gap-3 text-slate-300 text-base md:text-lg'>
           <p>
@@ -83,12 +86,14 @@ const BookSpotlight = ({ book, status, role }: Props) => {
       {/* 2. BOOK VISUAL SECTION */}
       <div className='relative flex-1 flex justify-center items-start w-full lg:w-auto'>
         <div className='relative'>
-          <BookCover
-            className='w-60 h-[330px] md:w-[276px] md:h-96'
-            coverImage={book.coverImageUrl!}
-            coverColor={book.coverColor}
-            variant='hero'
-          />
+          <BookLink id={book.id} title={book.title}>
+            <BookCover
+              className='w-60 h-[330px] md:w-[276px] md:h-96'
+              coverImage={book.coverImageUrl!}
+              coverColor={book.coverColor}
+              variant='hero'
+            />
+          </BookLink>
         </div>
       </div>
     </section>

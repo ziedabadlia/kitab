@@ -3,6 +3,7 @@ import { auth } from "@/features/auth/auth";
 import { redirect, notFound } from "next/navigation";
 import BookSpotlight from "@/components/BookSpotlight";
 import BookCover from "@/components/BookCover";
+import BookLink from "@/components/BookLink";
 
 export default async function BookDetailsPage({
   params,
@@ -81,12 +82,14 @@ export default async function BookDetailsPage({
           <div className='grid grid-cols-2 sm:grid-cols-3 gap-y-10 gap-x-6'>
             {similarBooks.map((similarBook) => (
               <div key={similarBook.id} className='flex justify-center'>
-                <BookCover
-                  coverImage={similarBook.coverImageUrl!}
-                  coverColor={similarBook.coverColor}
-                  variant='regular'
-                  className='w-full max-w-[120px] aspect-[2/3]'
-                />
+                <BookLink id={similarBook.id} title={similarBook.title}>
+                  <BookCover
+                    coverImage={similarBook.coverImageUrl!}
+                    coverColor={similarBook.coverColor}
+                    variant='regular'
+                    className='w-full max-w-[120px] aspect-2/3'
+                  />
+                </BookLink>
               </div>
             ))}
           </div>
