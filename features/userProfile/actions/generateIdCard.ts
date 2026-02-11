@@ -33,9 +33,10 @@ export async function generateIdCard(
       include: { user: true },
     });
 
-    // 2. Generate the Verification QR Code
-    // Points to the public verify route we discussed
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const host = process.env.VERCEL_URL || "localhost:3000";
+    const protocol = host.includes("localhost") ? "http" : "https";
+    const baseUrl = `${protocol}://${host}`;
+
     const qrData = `${baseUrl}/verify/${updatedStudent.studentIdNumber}`;
 
     const qrBuffer = await QRCode.toBuffer(qrData, {

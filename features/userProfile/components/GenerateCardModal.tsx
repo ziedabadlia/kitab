@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { X, Smartphone, MapPin, Building, CalendarIcon } from "lucide-react";
-import { useIdCard } from "../hooks/useIdCard";
 import { StudentProfile } from "../types";
+import { useGenerateCardForm } from "../hooks/useGenerateCardForm";
 
 interface Props {
   profile: StudentProfile;
@@ -12,46 +12,25 @@ interface Props {
 }
 
 export default function GenerateCardModal({ profile, isOpen, onClose }: Props) {
-  const { generate, isGenerating } = useIdCard(profile.id);
+  const {
+    formData,
+    isGenerating,
+    isUnchanged,
+    handleInputChange,
+    handleSubmit,
+  } = useGenerateCardForm(profile, onClose);
 
-  // Pre-fill state with existing profile data
-  const [formData, setFormData] = useState({
-    dateOfBirth: profile.dateOfBirth
-      ? new Date(profile.dateOfBirth).toISOString().split("T")[0]
-      : "",
-    department: profile.department || "",
-    contactNo: profile.contactNo || "",
-    address: profile.address || "",
-  });
-
-  // Handle body scroll and modal lifecycle
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
+    document.body.style.overflow = isOpen ? "hidden" : "unset";
     return () => {
       document.body.style.overflow = "unset";
     };
   }, [isOpen]);
 
-  // Update internal state if the profile data changes (e.g., after a successful mutation)
-  useEffect(() => {
-    setFormData({
-      dateOfBirth: profile.dateOfBirth
-        ? new Date(profile.dateOfBirth).toISOString().split("T")[0]
-        : "",
-      department: profile.department || "",
-      contactNo: profile.contactNo || "",
-      address: profile.address || "",
-    });
-  }, [profile]);
-
   if (!isOpen) return null;
 
   return (
-    <div className='fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4 overflow-hidden'>
+    <div className='fixed inset-0 z-9999 flex items-center justify-center bg-black/40 p-4 overflow-hidden'>
       <div className='bg-[#0F1117] rounded-3xl w-full max-w-lg max-h-[90vh] border border-slate-700 shadow-2xl overflow-hidden flex flex-col'>
         <div className='bg-[#E7C9A5] p-6 flex justify-between items-center'>
           <div>
@@ -65,18 +44,13 @@ export default function GenerateCardModal({ profile, isOpen, onClose }: Props) {
           <button
             onClick={onClose}
             className='p-2 hover:bg-black/5 rounded-full transition-colors'
-            aria-label='Close modal'
           >
             <X className='w-6 h-6 text-[#05070A]' />
           </button>
         </div>
 
         <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            await generate(formData);
-            onClose(); // Close modal after successful update
-          }}
+          onSubmit={handleSubmit}
           className='p-8 space-y-6 overflow-y-auto flex-1'
         >
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
@@ -85,14 +59,14 @@ export default function GenerateCardModal({ profile, isOpen, onClose }: Props) {
               icon={CalendarIcon}
               type='date'
               value={formData.dateOfBirth}
-              onChange={(v) => setFormData({ ...formData, dateOfBirth: v })}
+              onChange={(v) => handleInputChange("dateOfBirth", v)}
             />
             <InputField
               label='Department'
               icon={Building}
               placeholder='e.g. Computer Science'
               value={formData.department}
-              onChange={(v) => setFormData({ ...formData, department: v })}
+              onChange={(v) => handleInputChange("department", v)}
             />
           </div>
 
@@ -101,7 +75,7 @@ export default function GenerateCardModal({ profile, isOpen, onClose }: Props) {
             icon={Smartphone}
             placeholder='+123 456 789'
             value={formData.contactNo}
-            onChange={(v) => setFormData({ ...formData, contactNo: v })}
+            onChange={(v) => handleInputChange("contactNo", v)}
           />
 
           <div className='space-y-2'>
@@ -112,17 +86,19 @@ export default function GenerateCardModal({ profile, isOpen, onClose }: Props) {
               required
               className='w-full bg-[#161926] border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-[#E7C9A5] outline-none transition-all h-24 resize-none'
               value={formData.address}
-              onChange={(e) =>
-                setFormData({ ...formData, address: e.target.value })
-              }
+              onChange={(e) => handleInputChange("address", e.target.value)}
             />
           </div>
 
           <button
-            disabled={isGenerating}
-            className='w-full bg-[#E7C9A5] text-[#05070A] font-bold py-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50'
+            disabled={isGenerating || isUnchanged}
+            className='w-full bg-[#E7C9A5] text-[#05070A] font-bold py-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed'
           >
-            {isGenerating ? "Saving Changes..." : "Update Card Information"}
+            {isGenerating
+              ? "Saving Changes..."
+              : isUnchanged
+                ? "No Changes Detected"
+                : "Update Card Information"}
           </button>
         </form>
       </div>
