@@ -2,20 +2,28 @@ import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { BadgeCheck, XCircle, GraduationCap, Calendar } from "lucide-react";
 import Image from "next/image";
+import { UserStatus } from "@prisma/client";
 
-export default async function VerifyPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+// 1. Update interface to be a Promise
+interface VerifyPageProps {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+export default async function VerifyPage({ params }: VerifyPageProps) {
+  // 2. Await the params
+  const { id } = await params;
+
+  // 3. Use the awaited ID
   const student = await db.student.findUnique({
-    where: { studentIdNumber: params.id },
+    where: { studentIdNumber: id },
     include: { user: true },
   });
 
   if (!student) return notFound();
 
-  const isAccepted = student.status === "ACCEPTED";
+  const isAccepted = student.status === UserStatus.ACCEPTED;
 
   return (
     <div className='min-h-screen bg-[#05070A] flex items-center justify-center p-6'>
@@ -31,8 +39,9 @@ export default async function VerifyPage({
               className={`absolute inset-0 rounded-full animate-pulse border-2 ${isAccepted ? "border-emerald-500/50" : "border-red-500/50"}`}
             />
             <div className='relative w-full h-full rounded-full overflow-hidden border-4 border-[#12141D]'>
+              {/* Added a fallback image just in case */}
               <Image
-                src={student.user.profilePictureUrl || "/default-avatar.png"}
+                src={student.user.profilePictureUrl || "/icons/user.svg"}
                 alt='Student'
                 fill
                 className='object-cover'
