@@ -1,20 +1,36 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { auth } from "@/features/auth/auth";
+import {
+  authRoutes,
+  DEFAULT_LOGIN_REDIRECT,
+  DEFAULT_ADMIN_LOGIN_REDIRECT,
+} from "@/routes";
+import { Role } from "@prisma/client";
 
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get("next-auth.session-token")?.value;
-  const { pathname } = request.nextUrl;
+export default auth((req) => {
+  const { nextUrl } = req;
+  const isLoggedIn = !!req.auth;
+  const role = req.auth?.user?.role;
 
-  const isProtected =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
+  const isAdminRoute = nextUrl.pathname.startsWith("/admin");
+  const isAuthRoute = authRoutes.includes(nextUrl.pathname);
 
-  if (isProtected && !token) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  if (isAuthRoute && isLoggedIn) {
+    if (role === Role.ADMIN) {
+      return Response.redirect(new URL(DEFAULT_ADMIN_LOGIN_REDIRECT, nextUrl));
+    } else {
+      return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
+    }
   }
 
-  return NextResponse.next();
-}
+  if (isAdminRoute) {
+    if (!isLoggedIn) return Response.redirect(new URL("/login", nextUrl));
+    if (role !== "ADMIN")
+      return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
+  }
+
+  return;
+});
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

@@ -1,107 +1,41 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import Image from "next/image";
-import {
-  Home,
-  Users,
-  Book,
-  LayoutList,
-  UserRoundCheck,
-  LogOut,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import adminLogoSvg from "@/public/adminLogo.svg";
 import { Session } from "next-auth";
+import { useAdminNavigation } from "@/features/auth/hooks/useAdminNavigation";
+import { NavItem } from "./AdminSideBar/NavItem";
+import { AdminProfile } from "./AdminSideBar/AdminProfile";
 
-const adminNavItems = [
-  { name: "Home", href: "/admin", icon: Home },
-  { name: "All Users", href: "/admin/users", icon: Users },
-  { name: "All Books", href: "/admin/books", icon: Book },
-  { name: "Borrow Requests", href: "/admin/borrow-requests", icon: LayoutList },
-  {
-    name: "Account Requests",
-    href: "/admin/account-requests",
-    icon: UserRoundCheck,
-  },
-];
-
-interface SidebarProps {
-  session: Session | null;
-}
-
-const Sidebar = ({ session }: SidebarProps) => {
-  const pathname = usePathname();
+export default function AdminSideBar({ session }: { session: Session }) {
+  const { routes } = useAdminNavigation();
 
   return (
-    <div className='flex h-full w-72 flex-col bg-white p-5 shadow-sm border-r border-slate-100'>
-      {/* 1. LOGO SECTION */}
-      <div className='flex items-center gap-2 px-2 mb-10'>
-        <div className='w-10 h-10 flex items-center justify-center bg-indigo-900 rounded-lg'>
-          <Book className='text-white w-6 h-6' />
-        </div>
-        <span className='text-[#1E293B] font-bold text-2xl tracking-tight'>
+    <aside className='flex h-screen w-full flex-col bg-white p-5 border-r border-slate-100 md:w-72'>
+      <header className='flex items-center gap-2 px-2 pb-2 mb-5'>
+        <Image
+          src={adminLogoSvg}
+          alt='Admin Logo'
+          width={37}
+          height={37}
+          priority
+        />
+        <h1 className='text-[#1E293B] font-semibold text-[26px] tracking-tight'>
           BookWise
-        </span>
-      </div>
+        </h1>
+      </header>
 
-      {/* 2. NAVIGATION LINKS */}
-      <nav className='flex-1 space-y-2'>
-        {adminNavItems.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 font-medium",
-                isActive
-                  ? "bg-[#253585] text-white shadow-md shadow-blue-900/20"
-                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900",
-              )}
-            >
-              <item.icon
-                className={cn(
-                  "w-5 h-5",
-                  isActive ? "text-white" : "text-slate-400",
-                )}
-              />
-              <span>{item.name}</span>
-            </Link>
-          );
-        })}
+      <hr className='border-t-2 border-dashed border-[#8C8E98] mb-5 opacity-30' />
+
+      <nav className='flex-1 space-y-2 overflow-y-auto no-scrollbar'>
+        {routes.map((route) => (
+          <NavItem key={route.name} {...route} />
+        ))}
       </nav>
 
-      {/* 3. USER PROFILE SECTION */}
-      <div className='mt-auto p-2 bg-slate-50/50 rounded-2xl border border-slate-100 flex items-center justify-between'>
-        <div className='flex items-center gap-3'>
-          <div className='relative'>
-            <Image
-              src={session?.user?.image || "/icons/user.svg"}
-              alt='Avatar'
-              width={40}
-              height={40}
-              className='rounded-full object-cover border border-white shadow-sm'
-            />
-            {/* Online Status Dot */}
-            <div className='absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full' />
-          </div>
-          <div className='flex flex-col overflow-hidden max-w-[140px]'>
-            <p className='text-sm font-bold text-slate-800 truncate'>
-              {session?.user?.name || "Admin User"}
-            </p>
-            <p className='text-xs text-slate-500 truncate'>
-              {session?.user?.email || "admin@jsmastery.pro"}
-            </p>
-          </div>
-        </div>
-
-        <button className='p-2 hover:bg-red-50 rounded-lg group transition-colors'>
-          <LogOut className='w-5 h-5 text-red-400 group-hover:text-red-600' />
-        </button>
-      </div>
-    </div>
+      <footer className='pt-5'>
+        <AdminProfile session={session} />
+      </footer>
+    </aside>
   );
-};
-
-export default Sidebar;
+}
