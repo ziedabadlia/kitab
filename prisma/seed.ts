@@ -1,36 +1,74 @@
-import { PrismaClient, Role } from "@prisma/client";
-import bcrypt from "bcryptjs";
+import { PrismaClient, UserStatus } from "@prisma/client";
+import bcrypt, { hash } from "bcryptjs"; // If you're using bcrypt, otherwise use a dummy string
 
 const prisma = new PrismaClient();
 
-// Use a fixed ID if you want to keep it consistent across resets
-const ADMIN_ID = "00000000-0000-0000-0000-000000000001";
-
 async function main() {
-  console.log("🚀 Starting seed process...");
+  console.log("Seeding 30 users...");
 
-  const adminEmail = "admin@kitab.com";
-  const hashedPassword = await bcrypt.hash("Admin123!", 10);
+  // Optional: Clean up existing data to start fresh
+  await prisma.borrowing.deleteMany();
+  await prisma.student.deleteMany();
+  await prisma.user.deleteMany();
 
-  const admin = await prisma.user.upsert({
-    where: { email: adminEmail },
-    update: {},
-    create: {
-      id: ADMIN_ID,
-      fullName: "System Admin",
-      email: adminEmail,
-      hashedPassword: hashedPassword,
-      role: Role.ADMIN,
-      emailVerified: new Date(),
-    },
-  });
+  const password = await hash("password123", 10);
 
-  console.log(`✅ Admin user created/verified: ${admin.email}`);
+  const firstNames = [
+    "James",
+    "Mary",
+    "Robert",
+    "Patricia",
+    "John",
+    "Jennifer",
+    "Michael",
+    "Linda",
+  ];
+  const lastNames = [
+    "Smith",
+    "Johnson",
+    "Williams",
+    "Brown",
+    "Jones",
+    "Garcia",
+    "Miller",
+    "Davis",
+  ];
+
+  for (let i = 1; i <= 30; i++) {
+    const firstName = firstNames[i % firstNames.length];
+    const lastName = lastNames[i % lastNames.length];
+    const fullName = `${firstName} ${lastName} ${i}`; // Added index to make names unique
+    const email = `student${i}@university.edu`;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const studentId = (24000 + i).toString();
+
+    await prisma.user.create({
+      data: {
+        fullName,
+        email,
+        hashedPassword,
+        role: "STUDENT",
+        // Every 3rd user gets a random profile picture from Unsplash for testing
+        profilePictureUrl:
+          i % 3 === 0 ? `https://i.pravatar.cc/150?u=${email}` : null,
+        student: {
+          create: {
+            studentIdNumber: studentId,
+            universityIdCardUrl: `https://placehold.co/600x400/253585/white?text=ID+Card+${studentId}`,
+            status: UserStatus.ACCEPTED,
+            universityName: "University III",
+          },
+        },
+      },
+    });
+  }
+
+  console.log("✅ Seeded 30 users successfully!");
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Seed failed:", e);
+    console.error(e);
     process.exit(1);
   })
   .finally(async () => {

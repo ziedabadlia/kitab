@@ -58,6 +58,7 @@ const RegistrationForm: React.FC = () => {
                     <FormControl>
                       <Input
                         placeholder='John Doe'
+                        id='fullName'
                         {...field}
                         className='form-input h-10'
                       />
@@ -77,6 +78,7 @@ const RegistrationForm: React.FC = () => {
                       <Input
                         type='email'
                         placeholder='email@university.edu'
+                        id='email'
                         {...field}
                         className='form-input h-10'
                       />

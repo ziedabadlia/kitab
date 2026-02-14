@@ -32,7 +32,7 @@ const useSignupForm = () => {
       const fileToUpload = data.idCardUpload[0];
       const uploadResult = await uploadToCloudinary(fileToUpload);
 
-      if (!uploadResult?.public_id) {
+      if (!uploadResult?.secure_url) {
         toast.error("Failed to upload ID card. Please try again.");
         return;
       }
@@ -40,7 +40,7 @@ const useSignupForm = () => {
       // Step 2: Pass the Cloudinary public_id to your register action
       const result = await register({
         ...data,
-        idCardUpload: uploadResult.public_id, // Ensure this matches your server action
+        idCardUpload: uploadResult.secure_url, // Ensure this matches your server action
       });
 
       if (result.error) {
