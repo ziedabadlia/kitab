@@ -2,12 +2,12 @@
 
 import { UserTableSkeleton } from "./UserTableSkeleton";
 import { IdCardModal } from "./IdCardModal";
-import { DeleteUserModal } from "./DeleteUserModal"; // Ensure this is imported
 import { useUserTable } from "../hooks/useUserTable";
 import { SearchX } from "lucide-react";
 import TableHeader, { SortableHeader } from "./UsersTable/TableHeader";
 import { UserRow } from "./UsersTable/UserRow";
 import { TablePagination } from "./UsersTable/TablePagination";
+import ConfirmModal from "@/components/AdminConfirmModal";
 
 export function UserTable({
   initialData,
@@ -26,8 +26,8 @@ export function UserTable({
     selectedImage,
     setSelectedImage,
     deleteModal,
-    setDeleteModal, // Re-added state
-    handleConfirmDelete, // Re-added handler
+    setDeleteModal,
+    handleConfirmDelete,
     requestSort,
   } = useUserTable(initialData, initPage);
 
@@ -117,9 +117,12 @@ export function UserTable({
         onClose={() => setSelectedImage(null)}
       />
 
-      <DeleteUserModal
+      <ConfirmModal
+        title='Delete User'
+        description='Are you sure you want to delete this user?'
+        actionLabel='Delete'
+        variant='destructive'
         isOpen={deleteModal?.isOpen}
-        userName={deleteModal?.userName}
         onClose={() => setDeleteModal((prev) => ({ ...prev, isOpen: false }))}
         onConfirm={handleConfirmDelete}
       />

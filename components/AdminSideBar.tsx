@@ -21,7 +21,7 @@ export default function AdminSideBar({ session }: { session: Session }) {
           priority
         />
         <h1 className='text-[#1E293B] font-semibold text-[26px] tracking-tight'>
-          BookWise
+          KITAB
         </h1>
       </header>
 

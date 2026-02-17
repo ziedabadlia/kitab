@@ -30,7 +30,7 @@ export const useAdminNavigation = () => {
       },
       {
         name: "All Books",
-        href: "/admin/books",
+        href: ["/admin/books", "/admin/books/new", "/admin/books/edit"],
         icons: [whiteBooksIconSvg, greyBooksIconSvg],
       },
       {
@@ -50,7 +50,9 @@ export const useAdminNavigation = () => {
   const routes = useMemo(() => {
     return navItems.map((item) => ({
       ...item,
-      isActive: pathname === item.href,
+      isActive: Array.isArray(item.href)
+        ? item.href.includes(pathname)
+        : item.href === pathname,
     }));
   }, [pathname, navItems]);
 
