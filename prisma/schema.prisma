@@ -237,9 +237,9 @@ model Borrowing {
   id         String          @id @default(uuid())
   studentId  String          @map("student_id")
   bookId     String          @map("book_id")
-  status     BorrowingStatus @default(ACTIVE)
-  borrowedAt DateTime        @default(now()) @map("borrowed_at")
-  dueDate    DateTime        @map("due_date")
+  status     BorrowingStatus @default(PENDING)
+  borrowedAt DateTime?       @default(now()) @map("borrowed_at")
+  dueDate    DateTime?       @map("due_date")
   returnedAt DateTime?       @map("returned_at")
   createdAt  DateTime        @default(now()) @map("created_at")
   updatedAt  DateTime        @updatedAt @map("updated_at")
@@ -256,9 +256,14 @@ model Borrowing {
 }
 
 enum BorrowingStatus {
-  ACTIVE
+  PENDING
+  ACCEPTED
+  BORROWED
   RETURNED
+  REJECTED
+  CANCELLED
   OVERDUE
+  LOST
 }
 
 model Review {

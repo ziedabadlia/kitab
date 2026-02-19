@@ -20,7 +20,6 @@ export function BookTable({ initialData }: { initialData: any }) {
     isPlaceholderData,
     requestSort,
     sortConfig,
-    // Deletion states from the hook
     deleteModal,
     setDeleteModal,
     handleConfirmDelete,
@@ -34,7 +33,7 @@ export function BookTable({ initialData }: { initialData: any }) {
         query={query}
         setQuery={(val) => {
           setQuery(val);
-          setPage(1); // Reset to page 1 on search
+          setPage(1);
         }}
         onSort={() => requestSort("title")}
         sortConfig={sortConfig}

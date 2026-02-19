@@ -12,7 +12,7 @@ const AdminLayout = async ({ children }: { children: ReactNode }) => {
 
       <main className='flex-1 pl-72 min-h-screen bg-[#F8F8FF] rounded-tl-4xl border-2 border-[#EDF1F1]'>
         {/* Simple Top Header */}
-        <header className='h-20 flex  items-center justify-between px-10 sticky top-0 backdrop-blur-md z-40'>
+        <header className='h-20 flex items-center justify-between px-10 z-40'>
           <div>
             <h2 className='text-2xl text-[#1E293B] font-semibold'>
               Welcome, Admin
