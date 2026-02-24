@@ -1,47 +1,33 @@
 "use client";
 
-import { SearchX } from "lucide-react";
+import type { BooksPage } from "../hooks/useBookTable.utils";
+import { SearchX, Inbox } from "lucide-react";
 import { useBookTable } from "../hooks/useBookTable";
 import { UserTableSkeleton } from "../../users/components/UserTableSkeleton";
 import { TablePagination } from "../../users/components/UsersTable/TablePagination";
 import { BookRow } from "./BookRow";
 import BookTableHeader from "./BooksTable/BooksTableHeader";
 import ConfirmModal from "@/components/AdminConfirmModal";
+import { TableEmptyState } from "@/components/TableEmptyState";
 
-export function BookTable({ initialData }: { initialData: any }) {
-  const {
-    query,
-    setQuery,
-    page,
-    setPage,
-    processedData,
-    totalPages,
-    isLoading,
-    isPlaceholderData,
-    requestSort,
-    sortConfig,
-    deleteModal,
-    setDeleteModal,
-    handleConfirmDelete,
-  } = useBookTable(initialData, 1);
+export function BookTable({ initialData }: { initialData: BooksPage }) {
+  const table = useBookTable(initialData);
 
-  if (isLoading && !isPlaceholderData) return <UserTableSkeleton />;
+  if (table.isLoading) return <UserTableSkeleton />;
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-6 bg-white p-5 rounded-2xl'>
       <BookTableHeader
-        query={query}
-        setQuery={(val) => {
-          setQuery(val);
-          setPage(1);
-        }}
-        onSort={() => requestSort("title")}
-        sortConfig={sortConfig}
+        query={table.query}
+        setQuery={table.setQuery}
+        clearQuery={table.clearQuery}
       />
 
       <div
-        className={`bg-white rounded-[14px] p-7 shadow-sm border border-slate-100 transition-opacity ${
-          isPlaceholderData ? "opacity-50" : "opacity-100"
+        className={`bg-white rounded-[14px]  ${
+          table.isPlaceholderData
+            ? "opacity-50 pointer-events-none"
+            : "opacity-100"
         }`}
       >
         <div className='overflow-x-auto'>
@@ -56,13 +42,13 @@ export function BookTable({ initialData }: { initialData: any }) {
               </tr>
             </thead>
             <tbody className='divide-y divide-slate-100'>
-              {processedData.length > 0 ? (
-                processedData.map((book: any) => (
+              {table.processedData.length > 0 ? (
+                table.processedData.map((book: any) => (
                   <BookRow
                     key={book.id}
                     book={book}
                     onDelete={() =>
-                      setDeleteModal({
+                      table.setDeleteModal({
                         isOpen: true,
                         bookId: book.id,
                         bookTitle: book.title,
@@ -71,33 +57,34 @@ export function BookTable({ initialData }: { initialData: any }) {
                   />
                 ))
               ) : (
-                <tr>
-                  <td colSpan={5} className='py-20 text-center'>
-                    <div className='flex flex-col items-center text-slate-400'>
-                      <SearchX className='w-12 h-12 mb-2 opacity-20' />
-                      <p>No books found matching "{query}"</p>
-                    </div>
-                  </td>
-                </tr>
+                <TableEmptyState
+                  colSpan={5}
+                  hasNoData={!table.query}
+                  urlQuery={table.query}
+                  onClear={table.clearQuery}
+                  noDataTitle='No Books Yet'
+                  noDataDescription='No books have been added to the library yet. Start by adding your first collection.'
+                />
               )}
             </tbody>
           </table>
         </div>
 
-        {totalPages > 1 && (
+        {table.totalPages > 1 && (
           <TablePagination
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
+            currentPage={table.page}
+            totalPages={table.totalPages}
+            onPageChange={table.setPage}
           />
         )}
       </div>
 
-      {/* REUSABLE DELETE MODAL */}
       <ConfirmModal
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal((prev) => ({ ...prev, isOpen: false }))}
-        onConfirm={handleConfirmDelete}
+        isOpen={table.deleteModal.isOpen}
+        onClose={() =>
+          table.setDeleteModal((prev) => ({ ...prev, isOpen: false }))
+        }
+        onConfirm={table.handleConfirmDelete}
         title='Delete Book'
         actionLabel='Delete Book'
         variant='destructive'
@@ -105,7 +92,7 @@ export function BookTable({ initialData }: { initialData: any }) {
           <>
             Are you sure you want to delete{" "}
             <span className='font-semibold text-slate-900'>
-              {deleteModal.bookTitle}
+              {table.deleteModal.bookTitle}
             </span>
             ?
             <br />

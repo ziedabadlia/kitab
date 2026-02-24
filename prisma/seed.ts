@@ -1,59 +1,30 @@
-import { PrismaClient, BorrowingStatus } from "@prisma/client";
-import { addDays, subDays } from "date-fns";
+import { PrismaClient, Role } from "@prisma/client";
+import { hash } from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Seeding borrowing records...");
+  const adminEmail = "admin@kitab.edu";
+  const hashedPassword = await hash("admin2026", 12);
 
-  // 1. Get existing data
-  const students = await prisma.student.findMany();
-  const books = await prisma.book.findMany();
+  const existingAdmin = await prisma.user.findUnique({
+    where: { email: adminEmail },
+  });
 
-  if (students.length === 0 || books.length === 0) {
-    console.error(
-      "❌ Seed failed: Ensure you have students and books in the DB first.",
-    );
-    return;
+  if (!existingAdmin) {
+    const admin = await prisma.user.create({
+      data: {
+        fullName: "System Admin",
+        email: adminEmail,
+        hashedPassword: hashedPassword,
+        role: Role.ADMIN,
+        emailVerified: new Date(),
+      },
+    });
+    console.log(`✅ Admin user created: ${admin.email}`);
+  } else {
+    console.log("ℹ️ Admin user already exists.");
   }
-
-  const now = new Date();
-
-  const borrowData = [
-    {
-      studentId: students[0].id,
-      bookId: books[0].id,
-      status: "BORROWED" as BorrowingStatus,
-      borrowedAt: subDays(now, 5),
-      dueDate: addDays(now, 9),
-    },
-    {
-      studentId: students[1].id,
-      bookId: books[1].id,
-      status: "PENDING" as BorrowingStatus,
-    },
-    {
-      studentId: students[0].id,
-      bookId: books[2].id,
-      status: "RETURNED" as BorrowingStatus,
-      borrowedAt: subDays(now, 20),
-      returnedAt: subDays(now, 5),
-      dueDate: subDays(now, 6),
-    },
-    {
-      studentId: students[2]?.id || students[0].id,
-      bookId: books[3]?.id || books[1].id,
-      status: "OVERDUE" as BorrowingStatus,
-      borrowedAt: subDays(now, 15),
-      dueDate: subDays(now, 1),
-    },
-  ];
-
-  for (const data of borrowData) {
-    await prisma.borrowing.create({ data });
-  }
-
-  console.log("✅ Seeded borrowing records successfully!");
 }
 
 main()

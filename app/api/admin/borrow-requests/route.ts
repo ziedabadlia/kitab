@@ -1,32 +1,37 @@
-"use server";
-
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { BorrowingStatus, Prisma } from "@prisma/client";
-import { addDays } from "date-fns";
-import { revalidatePath } from "next/cache";
-import { formatDate, TERMINAL_STATES } from "../constants";
-import {
-  BorrowRequest,
-  GetBorrowingRequestsParams,
-  GetBorrowingRequestsResponse,
-} from "../types";
+import { BorrowingStatus } from "@prisma/client";
 
-export async function getBorrowingRequests({
-  page = 1,
-  pageSize = 10,
-  query = "",
-  sortField = "createdAt",
-  sortDirection = "desc",
-}: GetBorrowingRequestsParams = {}): Promise<GetBorrowingRequestsResponse> {
+const formatDate = (date: Date | null | undefined): string | null => {
+  if (!date) return null;
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+};
+
+export async function GET(req: NextRequest) {
+  const { searchParams } = req.nextUrl;
+
+  const page = Number(searchParams.get("page") ?? "1");
+  const pageSize = Number(searchParams.get("pageSize") ?? "10");
+  const query = searchParams.get("query") ?? "";
+  const sortField = searchParams.get("sort") ?? "createdAt";
+  const sortDirection = (searchParams.get("dir") ?? "desc") as "asc" | "desc";
   const skip = (page - 1) * pageSize;
 
-  const where: Prisma.BorrowingWhereInput = query
+  const where = query
     ? {
         OR: [
-          { book: { title: { contains: query, mode: "insensitive" } } },
+          {
+            book: { title: { contains: query, mode: "insensitive" as const } },
+          },
           {
             student: {
-              user: { fullName: { contains: query, mode: "insensitive" } },
+              user: {
+                fullName: { contains: query, mode: "insensitive" as const },
+              },
             },
           },
           ...(Object.values(BorrowingStatus).some((s) =>
@@ -58,20 +63,14 @@ export async function getBorrowingRequests({
       where,
       orderBy,
       include: {
-        book: {
-          include: {
-            categories: { include: { category: true } },
-          },
-        },
-        student: {
-          include: { user: true },
-        },
+        book: { include: { categories: { include: { category: true } } } },
+        student: { include: { user: true } },
       },
     }),
     db.borrowing.count({ where }),
   ]);
 
-  const formattedRequests: BorrowRequest[] = requests.map((request) => ({
+  const formattedRequests = requests.map((request) => ({
     id: request.id,
     status: request.status,
     book: {
@@ -80,7 +79,7 @@ export async function getBorrowingRequests({
       author: request.book.author,
       genre:
         request.book.categories?.map((c) => c.category.name).join(", ") || null,
-      coverImageUrl: request.book.coverImageUrl!,
+      coverImageUrl: request.book.coverImageUrl,
       coverColor: request.book.coverColor,
     },
     student: {
@@ -99,35 +98,9 @@ export async function getBorrowingRequests({
     rawCreatedAt: request.createdAt.toISOString(),
   }));
 
-  return {
+  return NextResponse.json({
     requests: formattedRequests,
     totalPages: Math.ceil(totalRequests / pageSize),
     totalRequests,
-  };
-}
-
-export async function updateBorrowingStatus(
-  borrowingId: string,
-  newStatus: BorrowingStatus,
-) {
-  const now = new Date();
-  const updateData: Prisma.BorrowingUpdateInput = { status: newStatus };
-
-  if (newStatus === "ACCEPTED") {
-    updateData.borrowedAt = now;
-    updateData.dueDate = addDays(now, 9);
-  } else if (newStatus === "RETURNED") {
-    updateData.returnedAt = now;
-  }
-
-  const result = await db.borrowing.updateMany({
-    where: { id: borrowingId, status: { notIn: TERMINAL_STATES } },
-    data: updateData,
   });
-
-  if (result.count === 0) {
-    throw new Error("Cannot update: record not found or already terminal.");
-  }
-
-  revalidatePath("/admin/borrow-requests");
 }

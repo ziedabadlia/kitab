@@ -1,119 +1,91 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { getBooksAction, deleteBookAction } from "../actions/book"; // Added delete action
-import { useDebounce } from "@/hooks/useDebounce";
-import { Book, SortConfig } from "../types";
+import { useCallback, useTransition, useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { deleteBookAction } from "../actions/book";
+import { useBooksQuery } from "./useBooksQuery";
+import { DEBOUNCE_MS, BooksPage, booksKeys } from "./useBookTable.utils";
 
-export function useBookTable(initialData: Book[], initialPage: number) {
+export function useBookTable(initialData: BooksPage) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const [, startTransition] = useTransition();
 
-  const [query, setQuery] = useState(searchParams.get("search") || "");
-  const debouncedQuery = useDebounce(query, 300);
-  const [page, setPage] = useState(
-    Number(searchParams.get("page")) || initialPage,
-  );
-  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
-
-  // --- DELETE MODAL STATE ---
-  const [deleteModal, setDeleteModal] = useState<{
-    isOpen: boolean;
-    bookId: string;
-    bookTitle: string;
-  }>({
+  const urlSearch = searchParams.get("search") ?? "";
+  const [localSearch, setLocalSearch] = useState(urlSearch);
+  const [page, setPage] = useState(1);
+  const [deleteModal, setDeleteModal] = useState({
     isOpen: false,
     bookId: "",
     bookTitle: "",
   });
 
-  // Sync state to URL
   useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (debouncedQuery) params.set("search", debouncedQuery);
-    else params.delete("search");
-    params.set("page", page.toString());
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
-  }, [debouncedQuery, page, pathname, router]);
+    setPage(1);
+    setLocalSearch(urlSearch);
+  }, [urlSearch]);
 
-  const { data, isLoading, isPlaceholderData } = useQuery({
-    queryKey: ["books", page, debouncedQuery],
-    queryFn: () => getBooksAction({ page, search: debouncedQuery }),
-    placeholderData: (prev) => prev,
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data, isFetching, isLoading } = useBooksQuery(
+    { page, search: urlSearch },
+    initialData,
+  );
 
-  // Prefetching
-  useEffect(() => {
-    if (data?.totalPages && page < data.totalPages) {
-      queryClient.prefetchQuery({
-        queryKey: ["books", page + 1, debouncedQuery],
-        queryFn: () =>
-          getBooksAction({ page: page + 1, search: debouncedQuery }),
+  const updateUrl = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("page");
+      Object.entries(updates).forEach(([key, value]) => {
+        if (!value) params.delete(key);
+        else params.set(key, value);
       });
-    }
-  }, [data, page, debouncedQuery, queryClient]);
+      startTransition(() =>
+        router.replace(
+          `${pathname}${params.toString() ? `?${params.toString()}` : ""}`,
+        ),
+      );
+    },
+    [router, pathname, searchParams],
+  );
 
-  const requestSort = (key: keyof Book) => {
-    let direction: "asc" | "desc" | null = "asc";
-    if (sortConfig?.key === key) {
-      direction = sortConfig.direction === "asc" ? "desc" : null;
-    }
-    setSortConfig(direction ? { key, direction } : null);
-  };
+  useEffect(() => {
+    if (localSearch === urlSearch) return;
+    const timer = setTimeout(
+      () => updateUrl({ search: localSearch || null }),
+      DEBOUNCE_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [localSearch, urlSearch, updateUrl]);
 
-  // --- DELETE HANDLER ---
   const handleConfirmDelete = async () => {
-    try {
-      const promise = deleteBookAction(deleteModal.bookId);
-
-      toast.promise(promise, {
-        loading: "Deleting book...",
-        success: () => {
-          // Invalidate cache to refresh the table
-          queryClient.invalidateQueries({ queryKey: ["books"] });
-          return `${deleteModal.bookTitle} deleted successfully.`;
-        },
-        error: "Failed to delete the book.",
-      });
-
-      setDeleteModal((prev) => ({ ...prev, isOpen: false }));
-    } catch (error) {
-      toast.error("An unexpected error occurred.");
-    }
+    const { bookId, bookTitle } = deleteModal;
+    setDeleteModal((prev) => ({ ...prev, isOpen: false }));
+    toast.promise(deleteBookAction(bookId), {
+      loading: "Deleting book...",
+      success: () => {
+        queryClient.invalidateQueries({ queryKey: booksKeys.all });
+        return `"${bookTitle}" deleted successfully.`;
+      },
+      error: "Failed to delete the book.",
+    });
   };
-
-  const processedData = useMemo(() => {
-    const books = [...(data?.books || [])];
-    if (sortConfig) {
-      books.sort((a: any, b: any) => {
-        const aValue = a[sortConfig.key] ?? "";
-        const bValue = b[sortConfig.key] ?? "";
-        if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
-    return books;
-  }, [data?.books, sortConfig]);
 
   return {
-    query,
-    setQuery,
+    query: localSearch,
+    setQuery: setLocalSearch,
+    clearQuery: () => {
+      setLocalSearch("");
+      updateUrl({ search: null });
+    },
     page,
     setPage,
-    sortConfig,
-    requestSort,
-    processedData,
-    totalPages: data?.totalPages || 1,
+    processedData: data?.books ?? [],
+    totalPages: data?.totalPages ?? 1,
     isLoading,
-    isPlaceholderData,
-    // Return delete logic
+    isPlaceholderData: isFetching && !isLoading,
     deleteModal,
     setDeleteModal,
     handleConfirmDelete,

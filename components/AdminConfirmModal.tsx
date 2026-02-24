@@ -67,14 +67,14 @@ function ConfirmModal({
             variant='outline'
             onClick={onClose}
             disabled={isLoading}
-            className='w-full sm:w-auto'
+            className='w-full sm:w-auto cursor-pointer'
           >
             Cancel
           </Button>
           <Button
             onClick={onConfirm}
             disabled={isLoading}
-            className={`w-full sm:w-auto transition-all ${variantClasses[variant]}`}
+            className={`w-full sm:w-auto transition-all ${variantClasses[variant]} cursor-pointer`}
           >
             {isLoading ? "Processing..." : actionLabel}
           </Button>

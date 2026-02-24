@@ -1,48 +1,52 @@
 "use client";
-
-import { UserTableSkeleton } from "./UserTableSkeleton";
-import { IdCardModal } from "./IdCardModal";
-import { useUserTable } from "../hooks/useUserTable";
-import { SearchX } from "lucide-react";
-import TableHeader, { SortableHeader } from "./UsersTable/TableHeader";
-import { UserRow } from "./UsersTable/UserRow";
-import { TablePagination } from "./UsersTable/TablePagination";
 import ConfirmModal from "@/components/AdminConfirmModal";
+import { IdCardModal } from "./IdCardModal";
+import { TablePagination } from "./UsersTable/TablePagination";
+import { TableEmptyState } from "@/components/TableEmptyState";
+import { UserRow } from "./UsersTable/UserRow";
+import TableHeader, { SortableHeader } from "./UsersTable/TableHeader";
+import { UserTableSkeleton } from "./UserTableSkeleton";
+import { useUserTable } from "../hooks/useUserTable";
+import { UsersPage } from "../types/users";
 
-export function UserTable({
-  initialData,
-  totalPages: initTotal,
-  currentPage: initPage,
-}: any) {
+export function UserTable({ initialData }: { initialData: UsersPage }) {
   const {
-    query,
-    setQuery,
+    localSearch,
+    setLocalSearch,
     page,
     setPage,
-    processedData,
-    totalPages,
+    data,
     isLoading,
     isPlaceholderData,
+    sortConfig,
+    requestSort,
     selectedImage,
     setSelectedImage,
     deleteModal,
     setDeleteModal,
     handleConfirmDelete,
-    requestSort,
-  } = useUserTable(initialData, initPage);
+    updateUrl,
+    isDeleting,
+  } = useUserTable(initialData);
 
-  if (isLoading && !isPlaceholderData) return <UserTableSkeleton />;
+  if (isLoading) return <UserTableSkeleton />;
+
+  const users = data?.users ?? [];
+  const totalPages = data?.totalPages ?? 1;
 
   return (
     <div
-      className={`h-fit bg-white rounded-[14px] p-7 shadow-sm border border-slate-100 transition-opacity ${isPlaceholderData ? "opacity-50" : "opacity-100"}`}
+      className={`h-fit bg-white rounded-[14px] p-7 shadow-sm border border-slate-100 transition-opacity ${isPlaceholderData ? "opacity-50 pointer-events-none" : ""}`}
     >
       <TableHeader
-        query={query}
-        setQuery={(val) => {
-          setQuery(val);
-          setPage(1);
+        query={localSearch}
+        setQuery={setLocalSearch}
+        clearQuery={() => {
+          setLocalSearch("");
+          updateUrl({ search: null });
         }}
+        sortConfig={sortConfig}
+        requestSort={requestSort}
       />
 
       <div className='overflow-x-auto'>
@@ -51,29 +55,30 @@ export function UserTable({
             <tr>
               <SortableHeader
                 label='Name'
-                onClick={() => requestSort("name")}
+                sortKey='fullName'
+                sortConfig={sortConfig}
+                requestSort={requestSort}
               />
               <SortableHeader
                 label='Date Joined'
-                onClick={() => requestSort("dateJoined")}
+                sortKey='createdAt'
+                sortConfig={sortConfig}
+                requestSort={requestSort}
               />
               <SortableHeader
                 label='Books Borrowed'
-                onClick={() => requestSort("booksBorrowed")}
+                sortKey='booksBorrowed'
+                sortConfig={sortConfig}
+                requestSort={requestSort}
               />
-              <SortableHeader
-                label='University ID No'
-                onClick={() => requestSort("universityId")}
-              />
-              <th className='px-6 py-4 text-[#3A354E] font-normal'>
-                University ID Card
-              </th>
-              <th className='px-6 py-4 text-[#3A354E] font-normal'>Action</th>
+              <th className='px-6 py-4 font-normal'>University ID No</th>
+              <th className='px-6 py-4 font-normal'>University ID Card</th>
+              <th className='px-6 py-4 font-normal'>Action</th>
             </tr>
           </thead>
           <tbody className='divide-y divide-slate-100'>
-            {processedData.length > 0 ? (
-              processedData.map((user: any) => (
+            {users.length > 0 ? (
+              users.map((user: any) => (
                 <UserRow
                   key={user.id}
                   user={user}
@@ -89,14 +94,17 @@ export function UserTable({
                 />
               ))
             ) : (
-              <tr>
-                <td colSpan={6} className='py-20 text-center'>
-                  <div className='flex flex-col items-center'>
-                    <SearchX className='text-slate-300 w-12 h-12 mb-2' />
-                    <p>No users found matching "{query}"</p>
-                  </div>
-                </td>
-              </tr>
+              <TableEmptyState
+                colSpan={6}
+                hasNoData={!localSearch} // If search is empty, we have NO data at all
+                urlQuery={localSearch}
+                onClear={() => {
+                  setLocalSearch("");
+                  updateUrl({ search: null });
+                }}
+                noDataTitle='No Users Yet'
+                noDataDescription='No students have registered in the library system yet.'
+              />
             )}
           </tbody>
         </table>
@@ -110,7 +118,6 @@ export function UserTable({
         />
       )}
 
-      {/* MODALS */}
       <IdCardModal
         isOpen={!!selectedImage}
         imageUrl={selectedImage || ""}
@@ -119,12 +126,13 @@ export function UserTable({
 
       <ConfirmModal
         title='Delete User'
-        description='Are you sure you want to delete this user?'
-        actionLabel='Delete'
-        variant='destructive'
-        isOpen={deleteModal?.isOpen}
-        onClose={() => setDeleteModal((prev) => ({ ...prev, isOpen: false }))}
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal((p) => ({ ...p, isOpen: false }))}
         onConfirm={handleConfirmDelete}
+        actionLabel='Delete User'
+        description={`Are you sure you want to delete ${deleteModal.userName}?`}
+        variant='destructive'
+        isLoading={isDeleting}
       />
     </div>
   );

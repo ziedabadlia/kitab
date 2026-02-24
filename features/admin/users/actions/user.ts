@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { User } from "../types/users";
 
 export async function getUsersAction({
   page = 1,
@@ -57,7 +58,7 @@ export async function getUsersAction({
     booksBorrowed: record.borrowings.length,
     universityId: record.studentIdNumber,
     universityCard: record.universityIdCardUrl,
-  }));
+  })) as User[];
 
   return { users, totalPages: Math.ceil(totalStudents / pageSize) };
 }

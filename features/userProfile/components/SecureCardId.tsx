@@ -86,14 +86,22 @@ export default function SecureIdCard({ profile }: SecureIdCardProps) {
               </div>
 
               <div className='bg-black/20 backdrop-blur-sm rounded-xl p-6 border border-white/10 w-full'>
-                <div className='space-y-2 flex flex-col items-center text-center'>
-                  <InfoRow label='Student ID' value={profile.studentIdNumber} />
-                  <InfoRow label='Full Name' value={profile.fullName} />
-                  <InfoRow
-                    label='Department'
-                    value={profile.department || "N/A"}
-                  />
-                  <InfoRow label='Contact' value={profile.contactNo || "N/A"} />
+                <div className='w-full flex justify-center'>
+                  <div className='space-y-2 flex flex-col items-start w-fit'>
+                    <InfoRow
+                      label='Student ID'
+                      value={profile.studentIdNumber}
+                    />
+                    <InfoRow label='Full Name' value={profile.fullName} />
+                    <InfoRow
+                      label='Department'
+                      value={profile.department || "N/A"}
+                    />
+                    <InfoRow
+                      label='Contact'
+                      value={profile.contactNo || "N/A"}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -143,7 +151,7 @@ export default function SecureIdCard({ profile }: SecureIdCardProps) {
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className='flex items-baseline gap-2'>
+    <div className='flex items-baseline gap-2 w-fit'>
       <span className='text-slate-300 text-xs font-medium shrink-0'>
         {label}
       </span>
