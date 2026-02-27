@@ -1,19 +1,20 @@
 import BookCover from "@/components/BookCover";
 import { BorrowerCell } from "./BorrowerCell";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { BorrowStatusSelect } from "./BorrowStatusSelect";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import Image from "next/image";
 import { BorrowReceipt } from "./BorrowReceipt";
-import { RowRequest, useBorrowRequestRow } from "../hooks/useBorrowRequestRow";
+import { useBorrowRequestRow } from "../hooks/useBorrowRequestRow";
 import receiptSvg from "@/assets/svg/admin/receipt.svg";
+import { BorrowRequest } from "../types";
 
-export function BorrowRequestRow({ request }: { request: RowRequest }) {
+export function BorrowRequestRow({ request }: { request: BorrowRequest }) {
   const {
     status,
     isUpdating,
     isTerminal,
+    isOverdue,
     isLateReturn,
     statusStyles,
     statusOptions,
@@ -48,17 +49,17 @@ export function BorrowRequestRow({ request }: { request: RowRequest }) {
 
       <td className='px-6 py-4'>
         {isTerminal ? (
-          <Badge
-            variant='outline'
+          // Same dimensions as SelectTrigger for visual consistency
+          <span
             className={cn(
-              "uppercase px-2.5 py-1 text-[10px] font-bold",
+              "inline-flex items-center h-8 px-3 text-[11px] rounded-full font-bold uppercase tracking-wider border",
               statusStyles.bg,
               statusStyles.text,
               statusStyles.border,
             )}
           >
             {isLateReturn ? "Late Return" : status}
-          </Badge>
+          </span>
         ) : (
           <BorrowStatusSelect
             status={status}
@@ -76,12 +77,27 @@ export function BorrowRequestRow({ request }: { request: RowRequest }) {
       <td className='px-6 py-4 text-slate-500 text-xs'>
         {request.borrowedAt || "-"}
       </td>
+
+      {/* Returned at — red if late */}
       <td className='px-6 py-4 text-slate-500 text-xs font-bold'>
         <span className={cn(isLateReturn && "text-red-600")}>
           {request.returnedAt || "-"}
         </span>
       </td>
-      <td className='px-6 py-4 text-slate-500 text-xs'>{request.dueDate}</td>
+
+      {/* Due date — red + overdue pill if past due and not yet returned */}
+      <td className='px-6 py-4 text-xs'>
+        <div className='flex items-center gap-1.5'>
+          <span
+            className={cn(
+              "text-slate-500",
+              isOverdue && "text-red-500 font-semibold",
+            )}
+          >
+            {request.dueDate || "-"}
+          </span>
+        </div>
+      </td>
 
       <td className='px-6 py-4 text-right'>
         <Dialog open={isReceiptOpen} onOpenChange={setIsReceiptOpen}>
@@ -97,7 +113,7 @@ export function BorrowRequestRow({ request }: { request: RowRequest }) {
           <DialogContent className='max-w-md p-0 border-none'>
             <BorrowReceipt
               setIsOpen={setIsReceiptOpen}
-              request={request as any}
+              request={request}
               isLateReturn={isLateReturn || false}
             />
           </DialogContent>

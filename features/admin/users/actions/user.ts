@@ -14,23 +14,33 @@ export async function getUsersAction({
   pageSize?: number;
 }) {
   const skip = (page - 1) * pageSize;
-  const where = search
-    ? {
-        OR: [
-          {
-            user: {
-              fullName: { contains: search, mode: "insensitive" as const },
+
+  const where = {
+    // Only show approved members — suspended students are applicants, not users
+    status: "ACCEPTED" as const,
+    ...(search
+      ? {
+          OR: [
+            {
+              user: {
+                fullName: { contains: search, mode: "insensitive" as const },
+              },
             },
-          },
-          {
-            user: { email: { contains: search, mode: "insensitive" as const } },
-          },
-          {
-            studentIdNumber: { contains: search, mode: "insensitive" as const },
-          },
-        ],
-      }
-    : {};
+            {
+              user: {
+                email: { contains: search, mode: "insensitive" as const },
+              },
+            },
+            {
+              studentIdNumber: {
+                contains: search,
+                mode: "insensitive" as const,
+              },
+            },
+          ],
+        }
+      : {}),
+  };
 
   const [totalStudents, students] = await Promise.all([
     db.student.count({ where }),
@@ -65,13 +75,18 @@ export async function getUsersAction({
 
 export async function deleteUserAction(userId: string, email: string) {
   try {
-    await db.user.delete({
-      where: { id: userId },
+    // Delete notifications first — no cascade on studentId FK
+    const student = await db.student.findUnique({
+      where: { userId },
+      select: { id: true },
     });
+    if (student) {
+      await db.notification.deleteMany({ where: { studentId: student.id } });
+    }
 
-    // Send Email Logic
+    await db.user.delete({ where: { id: userId } }); // cascades to Student
+
     console.log(`Sending account deletion email to ${email}...`);
-    // await sendEmail({ to: email, subject: "Account Deleted", body: "..." });
 
     revalidatePath("/admin/users");
     return { success: true };

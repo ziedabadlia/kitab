@@ -4,14 +4,13 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { getStatusStyles } from "../utils/status"; // Import the utility here
+import { getStatusStyles } from "../utils/status";
 
 interface Props {
   status: BorrowingStatus;
-  styles: any; // Styles for the Trigger (current status)
+  styles: ReturnType<typeof getStatusStyles>;
   options: { value: string; label: string }[];
   disabled: boolean;
   onChange: (val: BorrowingStatus) => void;
@@ -24,6 +23,8 @@ export function BorrowStatusSelect({
   disabled,
   onChange,
 }: Props) {
+  const currentLabel = options.find((o) => o.value === status)?.label ?? status;
+
   return (
     <Select disabled={disabled} onValueChange={onChange} value={status}>
       <SelectTrigger
@@ -34,10 +35,10 @@ export function BorrowStatusSelect({
           styles.border,
         )}
       >
-        <SelectValue />
+        <span>{currentLabel}</span>
       </SelectTrigger>
 
-      <SelectContent className='rounded-xl border-slate-200'>
+      <SelectContent position='popper' className='rounded-xl border-slate-200'>
         {options.map((opt) => {
           const optionStyle = getStatusStyles(opt.value);
 
@@ -49,7 +50,7 @@ export function BorrowStatusSelect({
                 "cursor-pointer p-1 my-2 rounded-lg transition-colors",
                 optionStyle.bg,
                 optionStyle.text,
-                `focus:${optionStyle.bg}`, // Maintains the hover color
+                optionStyle.border,
               )}
             >
               <span className='font-medium'>{opt.label}</span>

@@ -19,6 +19,11 @@ const DEFAULT_SEARCH = "";
 const DEFAULT_SORT = "createdAt";
 const DEFAULT_DIR = "desc";
 
+// Captured once at module load — tells React Query the server data is "fresh as of now".
+// Without this, initialData defaults to epoch 0 → immediately stale → background refetch
+// fires on mount → cache updates mid-render → totalPages changes → phantom extra pages.
+const SERVER_DATA_TIMESTAMP = Date.now();
+
 export function useUserTableData(initialData: UsersPage) {
   const router = useRouter();
   const pathname = usePathname();
@@ -39,6 +44,8 @@ export function useUserTableData(initialData: UsersPage) {
       ? { key: urlSort as UserSortField, direction: urlDir as SortDirection }
       : null;
 
+  const isDefaultView = page === 1 && !urlSearch && !urlSort;
+
   const queryParams = {
     page,
     search: urlSearch,
@@ -57,8 +64,30 @@ export function useUserTableData(initialData: UsersPage) {
     queryFn: () => fetchUsers(queryParams),
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 5,
-    ...(page === 1 && !urlSearch && !urlSort ? { initialData } : {}),
+    gcTime: 1000 * 60 * 15,
+    // initialDataUpdatedAt is critical — without it React Query treats initialData
+    // as stale from epoch 0 and fires an immediate background refetch on mount.
+    ...(isDefaultView
+      ? { initialData, initialDataUpdatedAt: SERVER_DATA_TIMESTAMP }
+      : {}),
   });
+
+  // Prefetch next page — depend only on `page`, NOT `data?.totalPages`.
+  // Including data?.totalPages in deps causes a cascade: prefetch resolves →
+  // data changes → effect re-runs → next page prefetches → pagination grows.
+  useEffect(() => {
+    const cached = queryClient.getQueryData<UsersPage>(
+      usersKeys.list(queryParams),
+    );
+    const totalPages = cached?.totalPages ?? data?.totalPages ?? 1;
+    if (page >= totalPages) return;
+    const nextParams = { ...queryParams, page: page + 1 };
+    queryClient.prefetchQuery({
+      queryKey: usersKeys.list(nextParams),
+      queryFn: () => fetchUsers(nextParams),
+      staleTime: 1000 * 60 * 5,
+    });
+  }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateUrl = useCallback(
     (updates: Record<string, string | null>) => {
@@ -74,7 +103,7 @@ export function useUserTableData(initialData: UsersPage) {
     [router, pathname, searchParams],
   );
 
-  // Debounced Search
+  // Debounced search
   useEffect(() => {
     if (localSearch === urlSearch) return;
     const timer = setTimeout(

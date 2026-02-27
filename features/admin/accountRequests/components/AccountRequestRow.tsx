@@ -6,6 +6,7 @@ import { getAvatarColor, getInitials } from "@/lib/utils/avatar";
 import { ActionModal } from "./ActionModal";
 import { IdCardModal } from "./IdCardModal";
 import { useAccountRowRequest } from "../hooks/useAccountRowRequests";
+import { Avatar } from "@/components/Avatar";
 
 export function AccountRequestRow({ request }: { request: any }) {
   const { modals, loading, isDone, toggleModal, handleApprove, handleDeny } =
@@ -18,24 +19,10 @@ export function AccountRequestRow({ request }: { request: any }) {
       <tr className='hover:bg-slate-50/50 transition-colors'>
         <td className='px-6 py-4'>
           <div className='flex items-center gap-3'>
-            <div
-              className={`w-10 h-10 rounded-full overflow-hidden relative flex-shrink-0 flex items-center justify-center text-white font-medium text-xs border border-white ${
-                request.student.profilePictureUrl
-                  ? "bg-slate-200"
-                  : getAvatarColor(request.student.fullName)
-              }`}
-            >
-              {request.student.profilePictureUrl ? (
-                <Image
-                  src={request.student.profilePictureUrl}
-                  alt={request.student.fullName}
-                  fill
-                  className='object-cover'
-                />
-              ) : (
-                <span>{getInitials(request.student.fullName)}</span>
-              )}
-            </div>
+            <Avatar
+              imageUrl={request.student.profilePictureUrl}
+              name={request.student.fullName}
+            />
             <div className='flex flex-col min-w-0'>
               <span className='font-semibold text-slate-900 truncate'>
                 {request.student.fullName}

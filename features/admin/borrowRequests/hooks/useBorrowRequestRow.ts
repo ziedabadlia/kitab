@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { updateBorrowingStatus } from "../actions/borrowing";
 import { getStatusStyles } from "../utils/status";
 
-// Define strict type for the request object used in the row
 export interface RowRequest {
   id: string;
   status: BorrowingStatus;
@@ -12,6 +11,9 @@ export interface RowRequest {
   returnedAt: string | null;
   dueDate: string | null;
   requestedAt: string;
+  // Raw ISO strings for reliable date comparisons (not formatted display strings)
+  rawDueDate: string | null;
+  rawReturnedAt: string | null;
   book: {
     title: string;
     coverImageUrl: string;
@@ -28,28 +30,53 @@ export function useBorrowRequestRow(request: RowRequest) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
 
-  // Statuses where no further action can be taken
   const isTerminal = ["RETURNED", "REJECTED", "CANCELLED", "LOST"].includes(
     status,
   );
 
+  // Use raw ISO strings for date comparisons — formatted strings like "Jan 01, 2025"
+  // are locale-dependent and will produce wrong results with new Date()
+  const isOverdue =
+    status === "BORROWED" &&
+    !!request.rawDueDate &&
+    new Date(request.rawDueDate) < new Date();
+
   const isLateReturn =
     status === "RETURNED" &&
-    request.returnedAt &&
-    request.dueDate &&
-    new Date(request.returnedAt) > new Date(request.dueDate);
+    !!request.rawReturnedAt &&
+    !!request.rawDueDate &&
+    new Date(request.rawReturnedAt) > new Date(request.rawDueDate);
 
   const statusStyles = getStatusStyles(status, isLateReturn || false);
 
-  const statusOptions = [
-    { value: "PENDING", label: "Pending" },
-    { value: "ACCEPTED", label: "Accepted" },
-    { value: "REJECTED", label: "Rejected" },
-    { value: "BORROWED", label: "Borrowed" },
-    { value: "RETURNED", label: "Returned" },
-    { value: "CANCELLED", label: "Cancelled" },
-    { value: "LOST", label: "Lost" },
-  ];
+  // Options depend on current status + whether the book is overdue:
+  //
+  // PENDING   → Accept | Reject | Cancel
+  // ACCEPTED  → Mark Borrowed | Cancel
+  // BORROWED  → within due date: Return only
+  //             past due date:   Late Return only (same RETURNED value, different label)
+  // terminal  → no options (select is hidden, badge shown instead)
+  const statusOptions = (() => {
+    if (status === "PENDING") {
+      return [
+        { value: "ACCEPTED", label: "Accept" },
+        { value: "REJECTED", label: "Reject" },
+        { value: "CANCELLED", label: "Cancel" },
+      ];
+    }
+    if (status === "ACCEPTED") {
+      return [
+        { value: "BORROWED", label: "Mark Borrowed" },
+        { value: "CANCELLED", label: "Cancel" },
+      ];
+    }
+    if (status === "BORROWED") {
+      return isOverdue
+        ? [{ value: "RETURNED", label: "Late Return" }]
+        : [{ value: "RETURNED", label: "Return" }];
+    }
+    return [];
+  })();
 
   const handleStatusChange = async (newStatus: BorrowingStatus) => {
     try {
@@ -57,21 +84,20 @@ export function useBorrowRequestRow(request: RowRequest) {
       await updateBorrowingStatus(request.id, newStatus);
       setStatus(newStatus);
       toast.success("Status updated successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to update status");
-      // Revert status on error if needed, though strictly we haven't changed the prop
     } finally {
       setIsUpdating(false);
     }
   };
 
-  // Check if we can generate a receipt (must be returned or in a specific state)
-  const canGenerateReceipt = !!(request.returnedAt || status === "RETURNED");
+  const canGenerateReceipt = status === "RETURNED" || status === "BORROWED";
 
   return {
     status,
     isUpdating,
     isTerminal,
+    isOverdue,
     isLateReturn,
     statusStyles,
     statusOptions,

@@ -2,6 +2,7 @@ import Image from "next/image";
 import trashIcon from "@/assets/svg/admin/trashIcon.svg";
 import extraIcon from "@/assets/svg/admin/extraIcon.svg";
 import { getAvatarColor, getInitials } from "@/lib/utils/avatar";
+import { Avatar } from "@/components/Avatar";
 
 interface Props {
   user: any;
@@ -13,20 +14,7 @@ export const UserRow = ({ user, onViewId, onDelete }: Props) => (
   <tr className='hover:bg-slate-50/50 transition-colors group'>
     <td className='px-6 py-4'>
       <div className='flex items-center gap-3'>
-        <div
-          className={`w-10 h-10 rounded-full overflow-hidden relative flex items-center justify-center text-white font-medium text-xs border border-white ${user.image ? "bg-slate-200" : getAvatarColor(user.name)}`}
-        >
-          {user.image ? (
-            <Image
-              src={user.image}
-              alt={user.name}
-              fill
-              className='object-cover'
-            />
-          ) : (
-            <span>{getInitials(user.name)}</span>
-          )}
-        </div>
+        <Avatar name={user.name} imageUrl={user.image} />
         <div>
           <p className='font-semibold text-[#1E293B]'>{user.name}</p>
           <p className='text-[#64748B] font-normal'>{user.email}</p>

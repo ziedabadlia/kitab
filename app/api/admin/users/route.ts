@@ -15,23 +15,32 @@ export async function GET(req: NextRequest) {
   const sortDirection = (searchParams.get("dir") ?? "desc") as SortDirection;
   const skip = (page - 1) * pageSize;
 
-  const where = search
-    ? {
-        OR: [
-          {
-            user: {
-              fullName: { contains: search, mode: "insensitive" as const },
+  // only include accepted library members (suspended students are not users)
+  const where = {
+    status: "ACCEPTED" as const,
+    ...(search
+      ? {
+          OR: [
+            {
+              user: {
+                fullName: { contains: search, mode: "insensitive" as const },
+              },
             },
-          },
-          {
-            user: { email: { contains: search, mode: "insensitive" as const } },
-          },
-          {
-            studentIdNumber: { contains: search, mode: "insensitive" as const },
-          },
-        ],
-      }
-    : {};
+            {
+              user: {
+                email: { contains: search, mode: "insensitive" as const },
+              },
+            },
+            {
+              studentIdNumber: {
+                contains: search,
+                mode: "insensitive" as const,
+              },
+            },
+          ],
+        }
+      : {}),
+  };
 
   // Build orderBy based on sort field
   // booksBorrowed requires a count sort via _count relation
@@ -86,7 +95,16 @@ export async function DELETE(req: NextRequest) {
         { status: 400 },
       );
     }
-    await db.user.delete({ where: { id: userId } });
+    // Notification has no cascade from Student, so manually delete
+    // child records before deleting the user to avoid FK constraint errors.
+    const student = await db.student.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+    if (student) {
+      await db.notification.deleteMany({ where: { studentId: student.id } });
+    }
+    await db.user.delete({ where: { id: userId } }); // cascades to Student
     console.log(`Sending account deletion email to ${email}...`);
     return NextResponse.json({ success: true });
   } catch (error) {

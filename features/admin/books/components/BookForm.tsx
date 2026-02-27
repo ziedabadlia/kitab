@@ -12,7 +12,9 @@ interface Props {
   initialData?: any;
   departments: { id: string; name: string }[];
   categories: { id: string; name: string }[];
-  onSubmit: (data: FormData) => Promise<void>;
+  onSubmit: (
+    data: FormData,
+  ) => Promise<{ success: boolean; message?: string; data?: any }>;
 }
 
 export function BookForm({
