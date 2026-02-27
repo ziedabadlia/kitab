@@ -20,7 +20,6 @@ export interface User {
 export interface UsersPage {
   users: User[];
   totalPages: number;
-  totalUsers: number;
 }
 
 export interface DeleteModalState {
