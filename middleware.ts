@@ -4,7 +4,6 @@ import {
   DEFAULT_LOGIN_REDIRECT,
   DEFAULT_ADMIN_LOGIN_REDIRECT,
 } from "@/routes";
-import { Role } from "@prisma/client";
 
 export default auth((req) => {
   const { nextUrl } = req;
@@ -15,11 +14,9 @@ export default auth((req) => {
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
 
   if (isAuthRoute && isLoggedIn) {
-    if (role === Role.ADMIN) {
-      return Response.redirect(new URL(DEFAULT_ADMIN_LOGIN_REDIRECT, nextUrl));
-    } else {
-      return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
-    }
+    const redirectTo =
+      role === "ADMIN" ? DEFAULT_ADMIN_LOGIN_REDIRECT : DEFAULT_LOGIN_REDIRECT;
+    return Response.redirect(new URL(redirectTo, nextUrl));
   }
 
   if (isAdminRoute) {
