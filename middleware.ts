@@ -1,20 +1,36 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import NextAuth from "next-auth";
+import authConfig from "@/auth.config";
+import {
+  authRoutes,
+  DEFAULT_LOGIN_REDIRECT,
+  DEFAULT_ADMIN_LOGIN_REDIRECT,
+} from "@/routes";
 
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get("next-auth.session-token")?.value;
-  const { pathname } = request.nextUrl;
+const { auth } = NextAuth(authConfig);
 
-  const isProtected =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
+export default auth((req) => {
+  const { nextUrl } = req;
+  const isLoggedIn = !!req.auth;
+  const role = req.auth?.user?.role;
 
-  if (isProtected && !token) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  const isAdminRoute = nextUrl.pathname.startsWith("/admin");
+  const isAuthRoute = authRoutes.includes(nextUrl.pathname);
+
+  if (isAuthRoute && isLoggedIn) {
+    const redirectTo =
+      role === "ADMIN" ? DEFAULT_ADMIN_LOGIN_REDIRECT : DEFAULT_LOGIN_REDIRECT;
+    return Response.redirect(new URL(redirectTo, nextUrl));
   }
 
-  return NextResponse.next();
-}
+  if (isAdminRoute) {
+    if (!isLoggedIn) return Response.redirect(new URL("/login", nextUrl));
+    if (role !== "ADMIN")
+      return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
+  }
+
+  return;
+});
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

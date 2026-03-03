@@ -4,13 +4,13 @@ import { formatBorrowStatus } from "./borrowStatus";
 export const getBookStatusTheme = (book: BorrowedBook) => {
   const statusLabel = formatBorrowStatus(
     book.status,
-    book.dueDate,
+    book.dueDate!,
     book.returnedAt,
   );
 
   const isReturned = book.status === "RETURNED";
   const isOverdue =
-    (new Date(book.dueDate) < new Date() && !isReturned) ||
+    (new Date(book.dueDate!) < new Date() && !isReturned) ||
     book.status === "OVERDUE";
 
   const isWarning = statusLabel.includes("days left");

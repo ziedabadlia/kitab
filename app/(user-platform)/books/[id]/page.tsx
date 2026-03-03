@@ -1,9 +1,11 @@
 import { db } from "@/lib/db";
 import { auth } from "@/features/auth/auth";
 import { redirect, notFound } from "next/navigation";
-import BookSpotlight from "@/components/BookSpotlight";
 import BookCover from "@/components/BookCover";
 import BookLink from "@/components/BookLink";
+import BookSpotlight from "@/features/BorrowRequest/components/BookSpotlight";
+import { getBookReviews } from "@/features/userProfile/actions/reviews";
+import BookReviews from "@/features/userProfile/components/Reviews/Bookreviews";
 
 export default async function BookDetailsPage({
   params,
@@ -14,37 +16,60 @@ export default async function BookDetailsPage({
   const session = await auth();
   if (!session) redirect("/login");
 
-  const book = await db.book.findUnique({
-    where: { id },
-    include: { categories: { include: { category: true } } },
-  });
+  const [book, student] = await Promise.all([
+    db.book.findUnique({
+      where: { id },
+      include: { categories: { include: { category: true } } },
+    }),
+    db.student.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true },
+    }),
+  ]);
 
   if (!book) notFound();
 
-  // Fetch similar books based on the first category ID
+  // Run remaining queries in parallel
   const categoryId = book.categories?.[0]?.categoryId;
-  const similarBooks = categoryId
-    ? await db.book.findMany({
-        where: {
-          categories: { some: { categoryId } },
-          id: { not: book.id }, // Don't include the current book
-        },
-        take: 6,
-      })
-    : [];
+
+  const [existingRequest, similarBooks, reviewsData] = await Promise.all([
+    student
+      ? db.borrowing.findFirst({
+          where: {
+            studentId: student.id,
+            bookId: book.id,
+            status: { notIn: ["RETURNED", "REJECTED", "CANCELLED", "LOST"] },
+          },
+          select: { id: true },
+        })
+      : null,
+
+    categoryId
+      ? db.book.findMany({
+          where: {
+            categories: { some: { categoryId } },
+            id: { not: book.id },
+          },
+          take: 6,
+        })
+      : [],
+
+    getBookReviews(book.id),
+  ]);
 
   return (
     <div className='container mx-auto px-5 md:px-10 lg:px-20 pb-20'>
-      {/* 1. TOP SECTION: Hero Spotlight */}
+      {/* Hero Spotlight */}
       <BookSpotlight
         book={book}
         status={session.user.status}
         role={session.user.role}
+        hasExistingRequest={!!existingRequest}
       />
 
-      {/* 2. BOTTOM SECTION: Summary, Video, and Similar Books */}
+      {/* Summary, Video, and Similar Books */}
       <div className='mt-20 flex flex-col lg:flex-row gap-16'>
-        {/* LEFT: Summary & Conditional Video */}
+        {/* LEFT: Summary & Video */}
         <div className='flex-[1.5] space-y-12'>
           {book.videoUrl && (
             <section>
@@ -52,7 +77,6 @@ export default async function BookDetailsPage({
                 Video Preview
               </h2>
               <div className='relative aspect-video rounded-3xl overflow-hidden border border-white/10 shadow-2xl'>
-                {/* Using a standard video tag or a dedicated VideoPlayer component */}
                 <video
                   src={book.videoUrl}
                   controls
@@ -61,20 +85,21 @@ export default async function BookDetailsPage({
               </div>
             </section>
           )}
+
           <section>
             <h2 className='text-2xl font-bold text-white mb-6'>Summary</h2>
             <div className='text-slate-400 leading-relaxed text-lg space-y-6'>
-              {/* Split by newline to render paragraphs */}
               {book.description?.split("\n").map((para, i) => (
                 <p key={i}>{para}</p>
               ))}
             </div>
           </section>
 
-          {/* Video renders only if bookVideoUrl is a string */}
+          {/* Reviews */}
+          <BookReviews bookId={book.id} initialData={reviewsData} />
         </div>
 
-        {/* RIGHT: More Similar Books using BookCover */}
+        {/* RIGHT: Similar Books */}
         <aside className='flex-1'>
           <h2 className='text-2xl font-bold text-white mb-8'>
             More similar books

@@ -1,11 +1,19 @@
 "use client";
 
-import { useSearch } from "@/features/search/contexts/SearchContext";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import notFoundSvg from "../assets/svg/notFound.svg";
 import Image from "next/image";
 
 export default function EmptyState() {
-  const { query, clearSearch } = useSearch();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const query = searchParams.get("q") ?? "";
+
+  const clearSearch = () => {
+    router.replace(pathname, { scroll: false });
+  };
 
   return (
     <div className='flex flex-col items-center justify-center py-0 px-4'>

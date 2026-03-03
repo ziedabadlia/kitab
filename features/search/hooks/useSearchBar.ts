@@ -1,62 +1,96 @@
 "use client";
 
 import { useRef, useState, useCallback } from "react";
-import { useSearch } from "@/features/search/contexts/SearchContext";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useFilterOptions } from "@/features/search/hooks/useFilterOptions";
 
+const DEBOUNCE_MS = 300;
+
 export function useSearchBar(onFilterChange?: () => void) {
-  const { query, setQuery, filters, setFilters, clearSearch } = useSearch();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const urlQuery = searchParams.get("q") ?? "";
+  const urlDepartmentId = searchParams.get("department") ?? undefined;
+  const urlCategoryId = searchParams.get("category") ?? undefined;
+
+  const [localQuery, setLocalQuery] = useState(urlQuery);
   const [showFilters, setShowFilters] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
   const { data, isLoading } = useFilterOptions();
+  const departments = data?.departments ?? [];
+  const categories = data?.categories ?? [];
 
-  const departments = data?.departments || [];
-  const categories = data?.categories || [];
+  const filters = {
+    departmentId: urlDepartmentId,
+    categoryId: urlCategoryId,
+  };
 
-  const activeFilterName = filters.departmentId
-    ? departments.find((d) => d.id === filters.departmentId)?.name
-    : filters.categoryId
-      ? categories.find((c) => c.id === filters.categoryId)?.name
+  const activeFilterName = urlDepartmentId
+    ? departments.find((d) => d.id === urlDepartmentId)?.name
+    : urlCategoryId
+      ? categories.find((c) => c.id === urlCategoryId)?.name
       : null;
+
+  const updateUrl = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(updates)) {
+        if (!value) params.delete(key);
+        else params.set(key, value);
+      }
+      const qs = params.toString();
+      router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
+    },
+    [router, pathname, searchParams],
+  );
 
   const handleInputChange = useCallback(
     (value: string) => {
-      setQuery(value);
-      onFilterChange?.();
+      setLocalQuery(value);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        updateUrl({ q: value || null, page: null });
+        onFilterChange?.();
+      }, DEBOUNCE_MS);
     },
-    [setQuery, onFilterChange],
+    [updateUrl, onFilterChange],
   );
 
   const handleClear = useCallback(() => {
-    setQuery("");
+    setLocalQuery("");
+    updateUrl({ q: null, page: null });
     onFilterChange?.();
     inputRef.current?.focus();
-  }, [setQuery, onFilterChange]);
+  }, [updateUrl, onFilterChange]);
 
   const handleClearAll = useCallback(() => {
-    clearSearch();
+    setLocalQuery("");
+    updateUrl({ q: null, department: null, category: null, page: null });
     onFilterChange?.();
-  }, [clearSearch, onFilterChange]);
+  }, [updateUrl, onFilterChange]);
 
   const handleFilterSelect = useCallback(
-    (newFilters: typeof filters) => {
-      setFilters(newFilters);
+    (newFilters: { departmentId?: string; categoryId?: string }) => {
+      updateUrl({
+        department: newFilters.departmentId ?? null,
+        category: newFilters.categoryId ?? null,
+        page: null,
+      });
       onFilterChange?.();
       setShowFilters(false);
     },
-    [setFilters, onFilterChange],
+    [updateUrl, onFilterChange],
   );
 
-  const toggleFilters = useCallback(() => {
-    setShowFilters((prev) => !prev);
-  }, []);
-
-  const closeFilters = useCallback(() => {
-    setShowFilters(false);
-  }, []);
+  const toggleFilters = useCallback(() => setShowFilters((p) => !p), []);
+  const closeFilters = useCallback(() => setShowFilters(false), []);
 
   return {
-    query,
+    query: localQuery,
     filters,
     inputRef,
     departments,

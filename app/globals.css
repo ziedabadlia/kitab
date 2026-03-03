@@ -189,3 +189,11 @@
     box-shadow 0.3s ease,
     transform 0.3s ease;
 }
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

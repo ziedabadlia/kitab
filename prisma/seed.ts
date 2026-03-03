@@ -1,60 +1,33 @@
 // prisma/seed.ts
-import { PrismaClient } from "@prisma/client";
+// Run with: npx prisma db push --force-reset && npx tsx prisma/seed.ts
 
-const prisma = new PrismaClient();
-
-const TARGET_USER_ID = "37a8c2bb-2ebe-4f9b-8b8c-63bd5a9c2e28";
-
-console.log(`\n📖 Seeding borrowings for user: ${TARGET_USER_ID}...`);
+import { db } from "@/lib/db";
 
 async function main() {
-  const student = await prisma.student.findUnique({
-    where: { userId: TARGET_USER_ID },
+  console.log("📌 Adding borrowing record...");
+
+  const borrowing = await db.borrowing.create({
+    data: {
+      studentId: "f39fe05f-002e-4b08-901e-e62a3b2621c9",
+      bookId: "0622fd31-c392-4e71-9c53-2d6b2d4b5d8c",
+      status: "PENDING",
+    },
   });
 
-  if (!student) {
-    console.error(
-      "❌ Could not find a Student profile for the provided User ID. Borrowing seed skipped.",
-    );
-  } else {
-    // 2. Get some books to borrow
-    const books = await prisma.book.findMany({ take: 5 });
-
-    if (books.length === 0) {
-      console.error("❌ No books found in database to borrow.");
-    } else {
-      for (const book of books) {
-        // Calculate dates
-        const borrowedAt = new Date();
-        borrowedAt.setDate(
-          borrowedAt.getDate() - Math.floor(Math.random() * 10),
-        ); // 0-10 days ago
-
-        const dueDate = new Date(borrowedAt);
-        dueDate.setDate(dueDate.getDate() + 14); // 14 days loan period
-
-        await prisma.borrowing.create({
-          data: {
-            studentId: student.id,
-            bookId: book.id,
-            status: "ACTIVE",
-            borrowedAt: borrowedAt,
-            dueDate: dueDate,
-          },
-        });
-      }
-      console.log(
-        `✅ Successfully seeded ${books.length} borrowed books for the student profile!`,
-      );
-    }
-  }
+  console.log("✅ Done:", borrowing.id);
 }
+
+main()
+  .catch((e) => {
+    console.error("❌ Failed:", e.message);
+    process.exit(1);
+  })
+  .finally(() => db.$disconnect());
+console.log("─────────────────────────────────────────");
 
 main()
   .catch((e) => {
     console.error("❌ Seed failed:", e);
     process.exit(1);
   })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .finally(() => db.$disconnect());

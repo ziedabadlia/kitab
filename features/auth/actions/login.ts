@@ -33,12 +33,10 @@ export const login = async (values: z.infer<typeof loginSchema>) => {
       email,
       password,
       redirectTo:
-        existingUser.role === "ADMIN"
+        existingUser.role === Role.ADMIN
           ? DEFAULT_ADMIN_LOGIN_REDIRECT
           : DEFAULT_LOGIN_REDIRECT,
     });
-
-    return { success: "Logged in!" };
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {

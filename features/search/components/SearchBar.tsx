@@ -43,7 +43,6 @@ export default function SearchBar({ onFilterChange }: SearchBarProps) {
 
       {/* Search Input */}
       <div className='relative group'>
-        {/* Golden Search Icon */}
         <div className='absolute inset-y-0 left-4 flex items-center pointer-events-none'>
           <Search className='h-5 w-5 text-[#E7C9A5] transition-colors' />
         </div>
@@ -59,7 +58,6 @@ export default function SearchBar({ onFilterChange }: SearchBarProps) {
                      focus:border-[#E7C9A5] caret-[#E7C9A5] transition-all duration-200'
         />
 
-        {/* Typing Indicator / Clear Button */}
         {query && (
           <button
             onClick={handleClear}
@@ -147,44 +145,72 @@ const FilterDropdown = memo(function FilterDropdown({
   };
 
   return (
-    <div
-      ref={ref}
-      className='absolute top-full left-0 mt-2 w-64 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl z-50 py-2'
-    >
-      <div className='px-3 py-2 text-xs font-semibold text-[#E7C9A5] uppercase tracking-wider'>
-        Departments
+    <>
+      <style>{`
+        .kitab-scroll::-webkit-scrollbar {
+          width: 4px;
+        }
+        .kitab-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .kitab-scroll::-webkit-scrollbar-thumb {
+          background-color: #E7C9A5;
+          border-radius: 999px;
+          opacity: 0.6;
+        }
+        .kitab-scroll::-webkit-scrollbar-thumb:hover {
+          background-color: #FFE1BD;
+        }
+        .kitab-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: #E7C9A5 transparent;
+        }
+      `}</style>
+
+      <div
+        ref={ref}
+        className='absolute top-full left-0 mt-2 w-64 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden'
+      >
+        <div
+          className='kitab-scroll overflow-y-auto py-2'
+          style={{ maxHeight: "340px" }}
+        >
+          <div className='px-3 py-2 text-xs font-semibold text-[#E7C9A5] uppercase tracking-wider'>
+            Departments
+          </div>
+
+          <FilterButton
+            label='All'
+            isActive={isActive("all")}
+            onClick={() => onSelect({})}
+          />
+
+          {departments.map((dept) => (
+            <FilterButton
+              key={dept.id}
+              label={dept.name}
+              isActive={isActive("dept", dept.id)}
+              onClick={() => onSelect({ departmentId: dept.id })}
+            />
+          ))}
+
+          <div className='border-t border-slate-700/60 my-2 mx-3' />
+
+          <div className='px-3 py-2 text-xs font-semibold text-[#E7C9A5] uppercase tracking-wider'>
+            Categories
+          </div>
+
+          {categories.map((cat) => (
+            <FilterButton
+              key={cat.id}
+              label={cat.name}
+              isActive={isActive("cat", cat.id)}
+              onClick={() => onSelect({ categoryId: cat.id })}
+            />
+          ))}
+        </div>
       </div>
-
-      <FilterButton
-        label='All'
-        isActive={isActive("all")}
-        onClick={() => onSelect({})}
-      />
-
-      {departments.map((dept) => (
-        <FilterButton
-          key={dept.id}
-          label={dept.name}
-          isActive={isActive("dept", dept.id)}
-          onClick={() => onSelect({ departmentId: dept.id })}
-        />
-      ))}
-
-      <div className='border-t border-slate-700 my-2' />
-
-      <div className='px-3 py-2 text-xs font-semibold text-[#E7C9A5] uppercase tracking-wider'>
-        Categories
-      </div>
-
-      {categories.map((cat) => (
-        <FilterButton
-          key={cat.id}
-          label={cat.name}
-          isActive={isActive("cat", cat.id)}
-          onClick={() => onSelect({ categoryId: cat.id })}
-        />
-      ))}
-    </div>
+    </>
   );
 });
 
@@ -200,8 +226,12 @@ const FilterButton = memo(function FilterButton({
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-700 transition-colors
-                 ${isActive ? "text-[#E7C9A5] bg-[#E7C9A5]/10" : "text-slate-300"}`}
+      className={`w-full text-left px-4 py-2 text-sm transition-colors
+                 ${
+                   isActive
+                     ? "text-[#E7C9A5] bg-[#E7C9A5]/10 font-medium"
+                     : "text-slate-300 hover:bg-slate-700/60 hover:text-white"
+                 }`}
     >
       {label}
     </button>

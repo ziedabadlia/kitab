@@ -1,58 +1,68 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useSearch } from "@/features/search/contexts/SearchContext";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useBooks } from "@/features/search/hooks/useBooks";
 
 export function useSearchContent() {
-  const { debouncedQuery, filters } = useSearch();
-  const [page, setPage] = useState(1);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const urlQuery = searchParams.get("q") ?? "";
+  const urlDepartmentId = searchParams.get("department") ?? undefined;
+  const urlCategoryId = searchParams.get("category") ?? undefined;
+  const urlPage = Number(searchParams.get("page") ?? "1");
+
   const [isChangingPage, setIsChangingPage] = useState(false);
-  const prevPageRef = useRef(page);
+  const prevPageRef = useRef(urlPage);
+
+  const updateUrl = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(updates)) {
+        if (!value) params.delete(key);
+        else params.set(key, value);
+      }
+      const qs = params.toString();
+      router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
+    },
+    [router, pathname, searchParams],
+  );
+
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      if (newPage !== urlPage) {
+        setIsChangingPage(true);
+        updateUrl({ page: String(newPage) });
+      }
+    },
+    [urlPage, updateUrl],
+  );
 
   const { data, isLoading, isFetching } = useBooks({
-    query: debouncedQuery,
-    departmentId: filters.departmentId,
-    categoryId: filters.categoryId,
-    page,
+    query: urlQuery,
+    departmentId: urlDepartmentId,
+    categoryId: urlCategoryId,
+    page: urlPage,
     limit: 12,
   });
 
-  // Memoize derived values to prevent re-renders
-  const books = useMemo(() => data?.books || [], [data?.books]);
+  const books = useMemo(() => data?.books ?? [], [data?.books]);
   const pagination = useMemo(() => data?.pagination, [data?.pagination]);
 
   const hasActiveFilters = useMemo(
-    () => Boolean(debouncedQuery || filters.departmentId || filters.categoryId),
-    [debouncedQuery, filters.departmentId, filters.categoryId],
+    () => Boolean(urlQuery || urlDepartmentId || urlCategoryId),
+    [urlQuery, urlDepartmentId, urlCategoryId],
   );
-
-  // Stable callback - doesn't recreate on every render
-  const handlePageChange = useCallback(
-    (newPage: number) => {
-      if (newPage !== page) {
-        setIsChangingPage(true);
-        setPage(newPage);
-      }
-    },
-    [page],
-  );
-
-  // Reset page when filters change
-  useEffect(() => {
-    if (page !== 1) {
-      setPage(1);
-      setIsChangingPage(false);
-    }
-  }, [debouncedQuery, filters.departmentId, filters.categoryId]);
 
   // Track page change completion
   useEffect(() => {
-    if (!isFetching && prevPageRef.current !== page) {
+    if (!isFetching && prevPageRef.current !== urlPage) {
       setIsChangingPage(false);
-      prevPageRef.current = page;
+      prevPageRef.current = urlPage;
     }
-  }, [isFetching, page]);
+  }, [isFetching, urlPage]);
 
   const showSkeleton = isLoading || isChangingPage;
 

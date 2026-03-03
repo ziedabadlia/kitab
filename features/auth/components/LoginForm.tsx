@@ -65,7 +65,7 @@ const LoginForm: React.FC = () => {
           <AuthButton isSubmitting={isSubmitting}>Login</AuthButton>
 
           <p className='text-center text-sm text-slate-400'>
-            New to BookWise?{" "}
+            New to KITAB?{" "}
             <Link
               href='/register'
               className='text-[#E7C9A5] font-semibold hover:underline'

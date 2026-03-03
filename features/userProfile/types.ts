@@ -1,5 +1,12 @@
 import { BorrowingStatus } from "@prisma/client";
 
+export const PRE_BORROW_STATUSES: BorrowingStatus[] = [
+  "PENDING",
+  "ACCEPTED",
+  "REJECTED",
+  "CANCELLED",
+];
+
 export interface BorrowedBook {
   id: string;
   title: string;
@@ -7,8 +14,9 @@ export interface BorrowedBook {
   coverImageUrl: string | null;
   coverColor: string;
   categories: { name: string }[];
-  borrowedAt: Date;
-  dueDate: Date;
+  requestedAt: Date;
+  borrowedAt: Date | null;
+  dueDate: Date | null;
   returnedAt: Date | null;
   status: BorrowingStatus;
 }
@@ -33,4 +41,26 @@ export interface IdCardFormData {
   department: string;
   contactNo: string;
   address: string;
+}
+
+export interface ReviewAuthor {
+  fullName: string;
+  profilePictureUrl: string | null;
+}
+
+export interface ReviewItem {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  author: ReviewAuthor;
+}
+
+export interface ReviewsData {
+  reviews: ReviewItem[];
+  totalCount: number;
+  averageRating: number;
+  canReview: boolean;
+  hasReviewed: boolean;
+  returnedBorrowingId: string | null;
 }

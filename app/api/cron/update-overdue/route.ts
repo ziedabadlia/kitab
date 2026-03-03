@@ -1,28 +1,94 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { differenceInDays, startOfDay } from "date-fns";
+import {
+  sendDueSoonEmail,
+  sendOverdueEmail,
+} from "@/lib/emails/getKitabTemplate/senders/borrowing";
+
+// Vercel cron security check
+function isAuthorized(request: Request): boolean {
+  const authHeader = request.headers.get("authorization");
+  return authHeader === `Bearer ${process.env.CRON_SECRET}`;
+}
 
 export async function GET(request: Request) {
-  // Security check for Vercel Cron
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isAuthorized(request)) {
     return new Response("Unauthorized", { status: 401 });
   }
 
   try {
-    // 1. Update the status to OVERDUE for all active borrowings past due
-    const result = await db.borrowing.updateMany({
-      where: {
-        status: "ACTIVE",
-        dueDate: { lt: new Date() },
+    const today = startOfDay(new Date());
+
+    // Fetch all active BORROWED records with student + book info
+    const activeBorrowings = await db.borrowing.findMany({
+      where: { status: "BORROWED", dueDate: { not: null } },
+      include: {
+        book: { select: { title: true } },
+        student: {
+          include: {
+            user: { select: { email: true, fullName: true } },
+          },
+        },
       },
-      data: { status: "OVERDUE" },
     });
 
-    // 2. Optional: Logic for email notifications could go here [cite: 2026-01-21]
+    const dueSoonResults = { sent: 0, errors: 0 };
+    const overdueResults = { sent: 0, errors: 0 };
+
+    await Promise.allSettled(
+      activeBorrowings.map(async (borrowing) => {
+        const dueDate = startOfDay(borrowing.dueDate!);
+        const daysLeft = differenceInDays(dueDate, today);
+
+        const { email, fullName } = borrowing.student.user;
+        const bookTitle = borrowing.book.title;
+
+        if (daysLeft >= 1 && daysLeft <= 3) {
+          // Due soon — send reminder (1, 2, or 3 days left)
+          try {
+            await sendDueSoonEmail(
+              email,
+              fullName,
+              bookTitle,
+              borrowing.dueDate!,
+              daysLeft,
+            );
+            dueSoonResults.sent++;
+          } catch (err) {
+            console.error(
+              `Due-soon email failed for borrowing ${borrowing.id}:`,
+              err,
+            );
+            dueSoonResults.errors++;
+          }
+        } else if (daysLeft < 0) {
+          // Overdue — notify student (status change is handled by admin)
+          const daysOverdue = Math.abs(daysLeft);
+          try {
+            await sendOverdueEmail(
+              email,
+              fullName,
+              bookTitle,
+              borrowing.dueDate!,
+              daysOverdue,
+            );
+            overdueResults.sent++;
+          } catch (err) {
+            console.error(
+              `Overdue email failed for borrowing ${borrowing.id}:`,
+              err,
+            );
+            overdueResults.errors++;
+          }
+        }
+      }),
+    );
 
     return NextResponse.json({
       success: true,
-      updatedCount: result.count,
+      dueSoon: dueSoonResults,
+      overdue: overdueResults,
     });
   } catch (error) {
     console.error("Cron Error:", error);

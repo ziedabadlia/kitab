@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { X, Smartphone, MapPin, Building, CalendarIcon } from "lucide-react";
+import { X, Smartphone, MapPin, Building } from "lucide-react";
 import { StudentProfile } from "../types";
 import { useGenerateCardForm } from "../hooks/useGenerateCardForm";
+import DatePicker from "@/components/ui/Datepicker";
 
 interface Props {
   profile: StudentProfile;
@@ -54,10 +55,8 @@ export default function GenerateCardModal({ profile, isOpen, onClose }: Props) {
           className='p-8 space-y-6 overflow-y-auto flex-1'
         >
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-            <InputField
+            <DatePicker
               label='Date of Birth'
-              icon={CalendarIcon}
-              type='date'
               value={formData.dateOfBirth}
               onChange={(v) => handleInputChange("dateOfBirth", v)}
             />
@@ -112,7 +111,6 @@ interface InputFieldProps {
   value?: string;
   type?: string;
   placeholder?: string;
-  // We explicitly tell TS that the callback receives a string
   onChange: (value: string) => void;
 }
 
@@ -131,7 +129,6 @@ function InputField({
         required
         {...props}
         className='w-full bg-[#161926] border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-[#E7C9A5] outline-none transition-all'
-        // Now TS knows e.target.value is being passed to a (value: string) => void function
         onChange={(e) => onChange(e.target.value)}
       />
     </div>

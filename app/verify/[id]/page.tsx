@@ -89,7 +89,7 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
           </div>
 
           <p className='mt-8 text-[10px] text-slate-600 uppercase font-bold tracking-[0.2em]'>
-            Official BookWise Verification System
+            Official KITAB Verification System
           </p>
         </div>
       </div>
