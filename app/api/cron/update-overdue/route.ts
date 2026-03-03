@@ -5,6 +5,7 @@ import {
   sendDueSoonEmail,
   sendOverdueEmail,
 } from "@/lib/emails/getKitabTemplate/senders/borrowing";
+import { createNotification } from "@/features/notifications/actions/notifications";
 
 // Vercel cron security check
 function isAuthorized(request: Request): boolean {
@@ -47,17 +48,24 @@ export async function GET(request: Request) {
         if (daysLeft >= 1 && daysLeft <= 3) {
           // Due soon — send reminder (1, 2, or 3 days left)
           try {
-            await sendDueSoonEmail(
-              email,
-              fullName,
-              bookTitle,
-              borrowing.dueDate!,
-              daysLeft,
-            );
+            const dayLabel = `${daysLeft} day${daysLeft === 1 ? "" : "s"}`;
+            await Promise.allSettled([
+              sendDueSoonEmail(
+                email,
+                fullName,
+                bookTitle,
+                borrowing.dueDate!,
+                daysLeft,
+              ),
+              createNotification(
+                borrowing.studentId,
+                `Reminder: "${bookTitle}" is due in ${dayLabel}. Please return it on time.`,
+              ),
+            ]);
             dueSoonResults.sent++;
           } catch (err) {
             console.error(
-              `Due-soon email failed for borrowing ${borrowing.id}:`,
+              `Due-soon notification failed for borrowing ${borrowing.id}:`,
               err,
             );
             dueSoonResults.errors++;
@@ -66,17 +74,24 @@ export async function GET(request: Request) {
           // Overdue — notify student (status change is handled by admin)
           const daysOverdue = Math.abs(daysLeft);
           try {
-            await sendOverdueEmail(
-              email,
-              fullName,
-              bookTitle,
-              borrowing.dueDate!,
-              daysOverdue,
-            );
+            const overdueLabel = `${daysOverdue} day${daysOverdue === 1 ? "" : "s"}`;
+            await Promise.allSettled([
+              sendOverdueEmail(
+                email,
+                fullName,
+                bookTitle,
+                borrowing.dueDate!,
+                daysOverdue,
+              ),
+              createNotification(
+                borrowing.studentId,
+                `Your borrowed book "${bookTitle}" is ${overdueLabel} overdue. Please return it immediately.`,
+              ),
+            ]);
             overdueResults.sent++;
           } catch (err) {
             console.error(
-              `Overdue email failed for borrowing ${borrowing.id}:`,
+              `Overdue notification failed for borrowing ${borrowing.id}:`,
               err,
             );
             overdueResults.errors++;

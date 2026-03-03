@@ -8,13 +8,20 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { logout } from "@/features/auth/actions/logout";
+import NotificationBell from "@/features/notifications/components/NotificationBell";
+import { NotificationItem } from "@/features/notifications/types";
 
 interface NavbarProps {
   userName: string;
   profilePictureUrl: string;
+  initialNotifications: NotificationItem[];
 }
 
-const Navbar = ({ userName, profilePictureUrl }: NavbarProps) => {
+const Navbar = ({
+  userName,
+  profilePictureUrl,
+  initialNotifications,
+}: NavbarProps) => {
   const [hasScrolled, setHasScrolled] = useState(false);
   const pathname = usePathname();
 
@@ -80,6 +87,7 @@ const Navbar = ({ userName, profilePictureUrl }: NavbarProps) => {
           <Link href='/search' className={searchLinkClasses}>
             Search
           </Link>
+          <NotificationBell initialNotifications={initialNotifications} />
 
           {/* User Profile Avatar */}
           <Link href='/profile' className='flex items-center gap-2 group'>

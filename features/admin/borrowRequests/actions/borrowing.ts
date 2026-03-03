@@ -15,6 +15,7 @@ import {
   sendBorrowRejectedEmail,
   sendBorrowRequestApprovedEmail,
 } from "@/lib/emails/getKitabTemplate/senders/borrowing";
+import { createNotification } from "@/features/notifications/actions/notifications";
 
 export async function getBorrowingRequests({
   page = 1,
@@ -136,21 +137,29 @@ export async function updateBorrowingStatus(
         include: {
           book: { select: { title: true, author: true } },
           student: {
-            include: { user: { select: { email: true, fullName: true } } },
+            select: {
+              id: true,
+              user: { select: { email: true, fullName: true } },
+            },
           },
         },
       });
-
       if (borrowing) {
-        await sendBorrowRequestApprovedEmail(
-          borrowing.student.user.email,
-          borrowing.student.user.fullName,
-          borrowing.book.title,
-          borrowing.book.author,
-        );
+        await Promise.allSettled([
+          sendBorrowRequestApprovedEmail(
+            borrowing.student.user.email,
+            borrowing.student.user.fullName,
+            borrowing.book.title,
+            borrowing.book.author,
+          ),
+          createNotification(
+            borrowing.student.id,
+            `Your borrow request for "${borrowing.book.title}" has been approved! Please collect it within 3 days.`,
+          ),
+        ]);
       }
     } catch (err) {
-      console.error("Borrow request approval email failed:", err);
+      console.error("ACCEPTED notification failed:", err);
     }
   }
 
@@ -162,22 +171,35 @@ export async function updateBorrowingStatus(
         include: {
           book: { select: { title: true } },
           student: {
-            include: { user: { select: { email: true, fullName: true } } },
+            select: {
+              id: true,
+              user: { select: { email: true, fullName: true } },
+            },
           },
         },
       });
-
       if (borrowing?.borrowedAt && borrowing?.dueDate) {
-        await sendBorrowConfirmationEmail(
-          borrowing.student.user.email,
-          borrowing.student.user.fullName,
-          borrowing.book.title,
-          borrowing.borrowedAt,
-          borrowing.dueDate,
-        );
+        const dueDateStr = borrowing.dueDate.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+        await Promise.allSettled([
+          sendBorrowConfirmationEmail(
+            borrowing.student.user.email,
+            borrowing.student.user.fullName,
+            borrowing.book.title,
+            borrowing.borrowedAt,
+            borrowing.dueDate,
+          ),
+          createNotification(
+            borrowing.student.id,
+            `You have borrowed "${borrowing.book.title}". Please return it by ${dueDateStr}.`,
+          ),
+        ]);
       }
     } catch (err) {
-      console.error("Borrow confirmation email failed:", err);
+      console.error("BORROWED notification failed:", err);
     }
   }
 

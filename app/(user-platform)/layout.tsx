@@ -5,6 +5,7 @@ import Image from "next/image";
 
 import noise from "@/assets/images/noise.webp";
 import Announcement from "@/components/Announcement";
+import { getNotifications } from "@/features/notifications/actions/notifications";
 
 export default async function UserLayout({
   children,
@@ -20,6 +21,8 @@ export default async function UserLayout({
   const isRestricted =
     session.user.role === "STUDENT" && session.user.status !== "ACCEPTED";
 
+  const notifications = await getNotifications();
+
   return (
     <main className='kitab-bg flex flex-col min-h-screen'>
       <Image
@@ -33,6 +36,7 @@ export default async function UserLayout({
         <Navbar
           userName={session.user.name}
           profilePictureUrl={session.user.profilePictureUrl!}
+          initialNotifications={notifications}
         />
         <div className='mt-24 px-5 md:px-10 lg:px-20'>
           {isRestricted && (
