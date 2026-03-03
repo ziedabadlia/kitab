@@ -12,6 +12,9 @@ import { BorrowRequest } from "../types";
 export function BorrowRequestRow({ request }: { request: BorrowRequest }) {
   const {
     status,
+    borrowedAt,
+    dueDate,
+    returnedAt,
     isUpdating,
     isTerminal,
     isOverdue,
@@ -34,7 +37,7 @@ export function BorrowRequestRow({ request }: { request: BorrowRequest }) {
               coverColor={request.book.coverColor}
             />
           </div>
-          <span className='font-bold text-slate-900 line-clamp-1 text-sm'>
+          <span className='font-medium text-slate-900 line-clamp-1 text-sm'>
             {request.book.title}
           </span>
         </div>
@@ -49,7 +52,6 @@ export function BorrowRequestRow({ request }: { request: BorrowRequest }) {
 
       <td className='px-6 py-4'>
         {isTerminal ? (
-          // Same dimensions as SelectTrigger for visual consistency
           <span
             className={cn(
               "inline-flex items-center h-8 px-3 text-[11px] rounded-full font-bold uppercase tracking-wider border",
@@ -74,18 +76,17 @@ export function BorrowRequestRow({ request }: { request: BorrowRequest }) {
       <td className='px-6 py-4 text-slate-500 text-xs'>
         {request.requestedAt}
       </td>
-      <td className='px-6 py-4 text-slate-500 text-xs'>
-        {request.borrowedAt || "-"}
-      </td>
+
+      <td className='px-6 py-4 text-slate-500 text-xs'>{borrowedAt || "-"}</td>
 
       {/* Returned at — red if late */}
       <td className='px-6 py-4 text-slate-500 text-xs font-bold'>
         <span className={cn(isLateReturn && "text-red-600")}>
-          {request.returnedAt || "-"}
+          {returnedAt || "-"}
         </span>
       </td>
 
-      {/* Due date — red + overdue pill if past due and not yet returned */}
+      {/* Due date — red if overdue */}
       <td className='px-6 py-4 text-xs'>
         <div className='flex items-center gap-1.5'>
           <span
@@ -94,7 +95,7 @@ export function BorrowRequestRow({ request }: { request: BorrowRequest }) {
               isOverdue && "text-red-500 font-semibold",
             )}
           >
-            {request.dueDate || "-"}
+            {dueDate || "-"}
           </span>
         </div>
       </td>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { BorrowingStatus } from "@prisma/client";
 import { toast } from "sonner";
+import { format } from "date-fns";
 import { updateBorrowingStatus } from "../actions/borrowing";
 import { getStatusStyles } from "../utils/status";
 
@@ -11,7 +12,6 @@ export interface RowRequest {
   returnedAt: string | null;
   dueDate: string | null;
   requestedAt: string;
-  // Raw ISO strings for reliable date comparisons (not formatted display strings)
   rawDueDate: string | null;
   rawReturnedAt: string | null;
   book: {
@@ -25,8 +25,27 @@ export interface RowRequest {
   };
 }
 
+const BORROW_PERIOD_DAYS = 9;
+
+function fmt(date: Date): string {
+  return format(date, "MMM dd, yyyy");
+}
+
 export function useBorrowRequestRow(request: RowRequest) {
   const [status, setStatus] = useState<BorrowingStatus>(request.status);
+  const [borrowedAt, setBorrowedAt] = useState<string | null>(
+    request.borrowedAt,
+  );
+  const [dueDate, setDueDate] = useState<string | null>(request.dueDate);
+  const [returnedAt, setReturnedAt] = useState<string | null>(
+    request.returnedAt,
+  );
+  const [rawDueDate, setRawDueDate] = useState<string | null>(
+    request.rawDueDate,
+  );
+  const [rawReturnedAt, setRawReturnedAt] = useState<string | null>(
+    request.rawReturnedAt,
+  );
   const [isUpdating, setIsUpdating] = useState(false);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
 
@@ -34,28 +53,17 @@ export function useBorrowRequestRow(request: RowRequest) {
     status,
   );
 
-  // Use raw ISO strings for date comparisons — formatted strings like "Jan 01, 2025"
-  // are locale-dependent and will produce wrong results with new Date()
   const isOverdue =
-    status === "BORROWED" &&
-    !!request.rawDueDate &&
-    new Date(request.rawDueDate) < new Date();
+    status === "BORROWED" && !!rawDueDate && new Date(rawDueDate) < new Date();
 
   const isLateReturn =
     status === "RETURNED" &&
-    !!request.rawReturnedAt &&
-    !!request.rawDueDate &&
-    new Date(request.rawReturnedAt) > new Date(request.rawDueDate);
+    !!rawReturnedAt &&
+    !!rawDueDate &&
+    new Date(rawReturnedAt) > new Date(rawDueDate);
 
   const statusStyles = getStatusStyles(status, isLateReturn || false);
 
-  // Options depend on current status + whether the book is overdue:
-  //
-  // PENDING   → Accept | Reject | Cancel
-  // ACCEPTED  → Mark Borrowed | Cancel
-  // BORROWED  → within due date: Return only
-  //             past due date:   Late Return only (same RETURNED value, different label)
-  // terminal  → no options (select is hidden, badge shown instead)
   const statusOptions = (() => {
     if (status === "PENDING") {
       return [
@@ -82,6 +90,23 @@ export function useBorrowRequestRow(request: RowRequest) {
     try {
       setIsUpdating(true);
       await updateBorrowingStatus(request.id, newStatus);
+
+      // Optimistically update dates to match what the server just wrote
+      if (newStatus === "BORROWED") {
+        const now = new Date();
+        const due = new Date(now);
+        due.setDate(due.getDate() + BORROW_PERIOD_DAYS);
+        setBorrowedAt(fmt(now));
+        setDueDate(fmt(due));
+        setRawDueDate(due.toISOString());
+      }
+
+      if (newStatus === "RETURNED") {
+        const now = new Date();
+        setReturnedAt(fmt(now));
+        setRawReturnedAt(now.toISOString());
+      }
+
       setStatus(newStatus);
       toast.success("Status updated successfully");
     } catch {
@@ -95,6 +120,9 @@ export function useBorrowRequestRow(request: RowRequest) {
 
   return {
     status,
+    borrowedAt,
+    dueDate,
+    returnedAt,
     isUpdating,
     isTerminal,
     isOverdue,

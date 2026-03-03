@@ -46,7 +46,7 @@ const ReceiptBookDetails = memo(
             <div className='flex items-start gap-2'>
               <span className='text-slate-400 min-w-fit'>Borrowed On:</span>
               <span className='text-white font-semibold'>
-                {formatDate(book.borrowedAt)}
+                {formatDate(book.borrowedAt!)}
               </span>
             </div>
           </li>
@@ -55,7 +55,7 @@ const ReceiptBookDetails = memo(
             <div className='flex items-start gap-2'>
               <span className='text-slate-400 min-w-fit'>Due Date:</span>
               <span className='text-[#E7C9A5] font-semibold'>
-                {formatDate(book.dueDate)}
+                {formatDate(book.dueDate!)}
               </span>
             </div>
           </li>
