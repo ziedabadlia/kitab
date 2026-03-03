@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { useState } from "react";
 import { getInitials, getAvatarColor } from "@/lib/utils/avatar";
 
 interface AvatarProps {
@@ -21,21 +24,30 @@ export function Avatar({
   size = "md",
   className = "",
 }: AvatarProps) {
+  const [imgFailed, setImgFailed] = useState(false);
   const { bg, text, border } = getAvatarColor(name);
   const { container, text: textSize } = sizeMap[size];
+
+  const showImage = !!imageUrl && !imgFailed;
 
   return (
     <div
       className={`
-        relative shrink-0 rounded-full overflow-hidden
+        relative flex-shrink-0 rounded-full overflow-hidden
         flex items-center justify-center font-bold border
         ${container} ${textSize}
-        ${imageUrl ? "bg-slate-200 border-slate-300 text-slate-600" : `${bg} ${text} ${border}`}
+        ${showImage ? "bg-slate-200 border-slate-300 text-slate-600" : `${bg} ${text} ${border}`}
         ${className}
       `.trim()}
     >
-      {imageUrl ? (
-        <Image src={imageUrl} alt={name} fill className='object-cover' />
+      {showImage ? (
+        <Image
+          src={imageUrl}
+          alt={name}
+          fill
+          className='object-cover'
+          onError={() => setImgFailed(true)}
+        />
       ) : (
         <span>{getInitials(name)}</span>
       )}

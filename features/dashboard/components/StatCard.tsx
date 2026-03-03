@@ -1,13 +1,15 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import deltaUpSvg from "@/assets/svg/admin/deltaUp.svg";
 import deltaDownSvg from "@/assets/svg/admin/deltaDown.svg";
 import Image from "next/image";
+import useCountUp from "../hooks/useCountUp";
 
 interface StatCardProps {
   label: string;
   value: number;
-  delta: number; // This will now receive the growth percentage
+  delta: number;
   positiveIsGood?: boolean;
 }
 
@@ -44,6 +46,8 @@ export function StatCard({
   delta,
   positiveIsGood = true,
 }: StatCardProps) {
+  const count = useCountUp(value, 1200);
+
   return (
     <div className='bg-white rounded-2xl px-7 py-6 flex flex-col gap-3'>
       <div className='flex items-center gap-2'>
@@ -51,7 +55,7 @@ export function StatCard({
         <DeltaBadge delta={delta} positiveIsGood={positiveIsGood} />
       </div>
       <p className='text-3xl font-semibold text-[#1E293B] tracking-tight'>
-        {value.toLocaleString()}
+        {count.toLocaleString()}
       </p>
       {delta !== 0 && (
         <p className='text-xs text-slate-400'>
