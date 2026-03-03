@@ -67,7 +67,7 @@ export default function NotificationBell({
         </div>
 
         {/* List */}
-        <div className='max-h-[340px] overflow-y-auto'>
+        <div className='max-h-[340px] overflow-y-auto scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]'>
           {notifications.length === 0 ? (
             <div className='flex flex-col items-center justify-center py-10 gap-2'>
               <Bell className='w-8 h-8 text-slate-700' />
