@@ -106,6 +106,7 @@ export async function GET() {
         })),
         borrowedAt: b.borrowedAt,
         dueDate: b.dueDate,
+        requestedAt: b.createdAt,
         returnedAt: b.returnedAt,
         status: b.status,
       })),

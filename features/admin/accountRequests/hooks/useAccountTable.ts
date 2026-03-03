@@ -7,7 +7,7 @@ import {
   type AccountRequestsPage,
 } from "./useAccountRequestsQuery";
 
-const DEBOUNCE_MS = 350;
+const DEBOUNCE_MS = 500;
 
 export function useAccountTable({
   initialData,

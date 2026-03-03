@@ -21,9 +21,23 @@ export async function generateIdCard(
   },
 ) {
   try {
+    // Guard: profile picture is required before generating an ID card
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { profilePictureUrl: true },
+    });
+
+    if (!user?.profilePictureUrl) {
+      return {
+        success: false,
+        error:
+          "A profile picture is required to generate your ID card. Please upload one first.",
+      };
+    }
+
     // 1. Update student metadata
     const updatedStudent = await db.student.update({
-      where: { userId: userId },
+      where: { userId },
       data: {
         dateOfBirth: new Date(data.dateOfBirth),
         department: data.department,
@@ -33,23 +47,20 @@ export async function generateIdCard(
       include: { user: true },
     });
 
-    const host = process.env.VERCEL_URL || "localhost:3000";
-    const protocol = host.includes("localhost") ? "http" : "https";
-    const baseUrl = `${protocol}://${host}`;
-
-    const qrData = `${baseUrl}/verify/${updatedStudent.studentIdNumber}`;
+    const appUrl = process.env.NEXTAUTH_URL;
+    const qrData = `${appUrl}/verify/${updatedStudent.studentIdNumber}`;
 
     const qrBuffer = await QRCode.toBuffer(qrData, {
       margin: 1,
       color: { dark: "#05070A", light: "#FFFFFF" },
     });
 
-    // 3. Upload ONLY the QR to Cloudinary
+    // 2. Upload QR to Cloudinary
     const qrUpload = await new Promise((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(
           {
-            folder: "bookwise/qr_codes",
+            folder: "KITAB/qr_codes",
             public_id: `qr_${updatedStudent.studentIdNumber}`,
           },
           (err, result) => (err ? reject(err) : resolve(result)),
@@ -59,7 +70,7 @@ export async function generateIdCard(
 
     const qrUrl = (qrUpload as any).secure_url;
 
-    // 4. Save the QR URL as the 'generatedIdCardUrl'
+    // 3. Save QR URL as generatedIdCardUrl
     await db.student.update({
       where: { id: updatedStudent.id },
       data: { generatedIdCardUrl: qrUrl },

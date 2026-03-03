@@ -1,4 +1,5 @@
 import { BorrowingStatus } from "@prisma/client";
+import { format } from "date-fns";
 
 export const TERMINAL_STATES: BorrowingStatus[] = [
   "RETURNED",
@@ -9,9 +10,5 @@ export const TERMINAL_STATES: BorrowingStatus[] = [
 
 export const formatDate = (date: Date | null | undefined): string | null => {
   if (!date) return null;
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
-  });
+  return format(date, "MMM dd, yyyy");
 };

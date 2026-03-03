@@ -8,6 +8,10 @@ import {
   GetAccountRequestsResponse,
   AccountRequest,
 } from "../types";
+import {
+  sendApprovalEmail,
+  sendRejectionEmail,
+} from "@/lib/emails/getKitabTemplate/senders/account";
 
 export async function getAccountRequests({
   page = 1,
@@ -87,26 +91,37 @@ export async function getAccountRequests({
 }
 
 export async function approveAccountRequest(studentId: string) {
-  const result = await db.student.updateMany({
-    where: { id: studentId, status: "SUSPENDED" },
+  const student = await db.student.update({
+    where: { id: studentId },
     data: { status: "ACCEPTED" },
+    include: { user: true },
   });
 
-  if (result.count === 0) {
-    throw new Error("Request not found or already processed.");
+  try {
+    await sendApprovalEmail(student.user.email, student.user.fullName);
+  } catch (err) {
+    console.error("Approval email failed:", err);
   }
 
   revalidatePath("/admin/account-requests");
 }
 
 export async function denyAccountRequest(studentId: string) {
-  const result = await db.student.updateMany({
-    where: { id: studentId, status: "SUSPENDED" },
-    data: { status: "REJECTED" },
+  // Fetch user info before deletion to send the rejection email
+  const student = await db.student.findUnique({
+    where: { id: studentId },
+    include: { user: { select: { id: true, email: true, fullName: true } } },
   });
 
-  if (result.count === 0) {
-    throw new Error("Request not found or already processed.");
+  if (!student) return;
+
+  // Deleting the User cascades to Student, notifications, borrowings, etc.
+  await db.user.delete({ where: { id: student.user.id } });
+
+  try {
+    await sendRejectionEmail(student.user.email, student.user.fullName);
+  } catch (err) {
+    console.error("Rejection email failed:", err);
   }
 
   revalidatePath("/admin/account-requests");

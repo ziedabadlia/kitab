@@ -10,6 +10,11 @@ import {
   GetBorrowingRequestsParams,
   GetBorrowingRequestsResponse,
 } from "../types";
+import {
+  sendBorrowConfirmationEmail,
+  sendBorrowRejectedEmail,
+  sendBorrowRequestApprovedEmail,
+} from "@/lib/emails/getKitabTemplate/senders/borrowing";
 
 export async function getBorrowingRequests({
   page = 1,
@@ -58,14 +63,8 @@ export async function getBorrowingRequests({
       where,
       orderBy,
       include: {
-        book: {
-          include: {
-            categories: { include: { category: true } },
-          },
-        },
-        student: {
-          include: { user: true },
-        },
+        book: { include: { categories: { include: { category: true } } } },
+        student: { include: { user: true } },
       },
     }),
     db.borrowing.count({ where }),
@@ -113,7 +112,7 @@ export async function updateBorrowingStatus(
   const now = new Date();
   const updateData: Prisma.BorrowingUpdateInput = { status: newStatus };
 
-  if (newStatus === "ACCEPTED") {
+  if (newStatus === "BORROWED") {
     updateData.borrowedAt = now;
     updateData.dueDate = addDays(now, 9);
   } else if (newStatus === "RETURNED") {
@@ -127,6 +126,84 @@ export async function updateBorrowingStatus(
 
   if (result.count === 0) {
     throw new Error("Cannot update: record not found or already terminal.");
+  }
+
+  // Send approval email when borrow request is accepted
+  if (newStatus === "ACCEPTED") {
+    try {
+      const borrowing = await db.borrowing.findUnique({
+        where: { id: borrowingId },
+        include: {
+          book: { select: { title: true, author: true } },
+          student: {
+            include: { user: { select: { email: true, fullName: true } } },
+          },
+        },
+      });
+
+      if (borrowing) {
+        await sendBorrowRequestApprovedEmail(
+          borrowing.student.user.email,
+          borrowing.student.user.fullName,
+          borrowing.book.title,
+          borrowing.book.author,
+        );
+      }
+    } catch (err) {
+      console.error("Borrow request approval email failed:", err);
+    }
+  }
+
+  // Send confirmation email when book is marked as borrowed
+  if (newStatus === "BORROWED") {
+    try {
+      const borrowing = await db.borrowing.findUnique({
+        where: { id: borrowingId },
+        include: {
+          book: { select: { title: true } },
+          student: {
+            include: { user: { select: { email: true, fullName: true } } },
+          },
+        },
+      });
+
+      if (borrowing?.borrowedAt && borrowing?.dueDate) {
+        await sendBorrowConfirmationEmail(
+          borrowing.student.user.email,
+          borrowing.student.user.fullName,
+          borrowing.book.title,
+          borrowing.borrowedAt,
+          borrowing.dueDate,
+        );
+      }
+    } catch (err) {
+      console.error("Borrow confirmation email failed:", err);
+    }
+  }
+
+  // Send rejection email when borrow request is rejected
+  if (newStatus === "REJECTED") {
+    try {
+      const borrowing = await db.borrowing.findUnique({
+        where: { id: borrowingId },
+        include: {
+          book: { select: { title: true } },
+          student: {
+            include: { user: { select: { email: true, fullName: true } } },
+          },
+        },
+      });
+
+      if (borrowing) {
+        await sendBorrowRejectedEmail(
+          borrowing.student.user.email,
+          borrowing.student.user.fullName,
+          borrowing.book.title,
+        );
+      }
+    } catch (err) {
+      console.error("Borrow rejection email failed:", err);
+    }
   }
 
   revalidatePath("/admin/borrow-requests");

@@ -39,7 +39,7 @@ const BorrowTableHeader = ({
           <Search className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#253585] transition-colors' />
           <input
             type='text'
-            placeholder='Search requests...'
+            placeholder='Search by book, student, or status...'
             className='w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm text-slate-700 focus:bg-white focus:border-[#253585] focus:ring-4 focus:ring-blue-600/5 transition-all'
             value={query}
             onChange={(e) => setQuery(e.target.value)}

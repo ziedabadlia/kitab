@@ -1,6 +1,6 @@
 "use client";
 
-import { GraduationCap, Hash, MapPin, Phone } from "lucide-react";
+import { GraduationCap, Hash, MapPin, Phone, ImageOff } from "lucide-react";
 import ProfilePicture from "./ProfilePicture";
 import { StudentProfile } from "../types";
 import SecureIdCard from "./SecureCardId";
@@ -18,6 +18,8 @@ export default function ProfileInfo({
   profile,
   onOpenCardModal,
 }: ProfileInfoProps) {
+  const hasProfilePicture = !!profile.profilePictureUrl;
+
   return (
     <div className='space-y-8'>
       {/* Profile Header Card */}
@@ -84,10 +86,22 @@ export default function ProfileInfo({
         </div>
       </div>
 
+      {/* Profile picture required notice */}
+      {!hasProfilePicture && (
+        <div className='flex items-start gap-3 px-4 py-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20'>
+          <ImageOff className='w-4 h-4 text-amber-400 mt-0.5 shrink-0' />
+          <p className='text-amber-400 text-sm leading-relaxed'>
+            A profile picture is required before you can generate your digital
+            ID card. Upload one above to continue.
+          </p>
+        </div>
+      )}
+
       {/* SMART ACTION UI ELEMENT */}
       <SmartActionCard
         hasCard={!!profile.generatedIdCardUrl}
-        onAction={onOpenCardModal}
+        disabled={!hasProfilePicture}
+        onAction={hasProfilePicture ? onOpenCardModal : undefined}
       />
 
       {profile.generatedIdCardUrl && (
