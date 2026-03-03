@@ -27,11 +27,6 @@ const useLoginForm = () => {
       if (result?.error) {
         form.reset({ ...values, password: "" });
         toast.error(result.error);
-        return;
-      }
-
-      if (result?.success) {
-        toast.success("Welcome back!");
       }
     } catch (error) {
       console.error("Login hook error:", error);
