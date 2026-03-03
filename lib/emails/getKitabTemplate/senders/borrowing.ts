@@ -1,10 +1,9 @@
 import { format } from "date-fns";
-// lib/emails/senders/borrowing.ts
 import {
-  transporter,
-  FROM,
   APP_URL,
+  FROM,
   getKitabTemplate,
+  transporter,
 } from "../../transporter";
 
 export const sendBorrowRequestApprovedEmail = async (
@@ -80,6 +79,62 @@ export const sendBorrowRejectedEmail = async (
     from: FROM,
     to: email,
     subject: `Your Borrow Request for "${bookTitle}" Was Not Approved`,
+    html,
+  });
+};
+
+export const sendDueSoonEmail = async (
+  email: string,
+  studentName: string,
+  bookTitle: string,
+  dueDate: Date,
+  daysLeft: number,
+) => {
+  const fmt = (date: Date) => format(date, "MMMM d, yyyy");
+
+  const html = getKitabTemplate(
+    "Your Book Is Due Soon",
+    `Hi ${studentName},<br/><br/>
+    This is a friendly reminder that <strong style="color:#FFFFFF;">${bookTitle}</strong> is due in
+    <strong style="color:#E7C9A5;">${daysLeft} day${daysLeft === 1 ? "" : "s"}</strong>
+    on <strong style="color:#E7C9A5;">${fmt(dueDate)}</strong>.<br/><br/>
+    Please return it to the library on time to avoid any late penalties.`,
+    "View Borrowed Books",
+    `${APP_URL}/profile`,
+  );
+
+  await transporter.sendMail({
+    from: FROM,
+    to: email,
+    subject: `Reminder: "${bookTitle}" Is Due in ${daysLeft} Day${daysLeft === 1 ? "" : "s"}`,
+    html,
+  });
+};
+
+export const sendOverdueEmail = async (
+  email: string,
+  studentName: string,
+  bookTitle: string,
+  dueDate: Date,
+  daysOverdue: number,
+) => {
+  const fmt = (date: Date) => format(date, "MMMM d, yyyy");
+
+  const html = getKitabTemplate(
+    "Your Book Is Overdue",
+    `Hi ${studentName},<br/><br/>
+    Your borrowed copy of <strong style="color:#FFFFFF;">${bookTitle}</strong> was due on
+    <strong style="color:#E7C9A5;">${fmt(dueDate)}</strong> and is now
+    <strong style="color:#E7C9A5;">${daysOverdue} day${daysOverdue === 1 ? "" : "s"} overdue</strong>.<br/><br/>
+    Please return it to the library as soon as possible to avoid further penalties.`,
+    "View Borrowed Books",
+    `${APP_URL}/profile`,
+  );
+
+  await transporter.sendMail({
+    from: FROM,
+    to: email,
+    subject: `Overdue Notice: "${bookTitle}" Was Due ${daysOverdue} Day${daysOverdue === 1 ? "" : "s"} Ago`,
     html,
   });
 };
