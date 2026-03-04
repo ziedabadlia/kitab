@@ -1,9 +1,15 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { toast } from "sonner";
+import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Form,
   FormControl,
@@ -12,24 +18,23 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 import AuthCard from "./AuthCard";
 import FileDropzone from "./AuthDropZone";
 import AuthButton from "./AuthButton";
 import useFetchUniversities from "../hooks/useFetchUniversities";
 import useSignupForm from "../hooks/useSignupForm";
-import { register } from "../actions/register";
 import { PasswordInput } from "./PasswordInput";
+import { cn } from "@/lib/utils";
+import { useDebounce } from "use-debounce";
 
 const RegistrationForm: React.FC = () => {
-  const { universities, isLoadingOptions } = useFetchUniversities();
+  const [open, setOpen] = useState(false);
+  const [universitySearch, setUniversitySearch] = useState("");
+  const [debouncedSearch] = useDebounce(universitySearch, 400);
+
+  const { universities, isLoadingOptions } =
+    useFetchUniversities(debouncedSearch);
   const { form, isSubmitting, onSubmit } = useSignupForm();
 
   return (
@@ -89,6 +94,7 @@ const RegistrationForm: React.FC = () => {
               />
             </div>
 
+            {/* University Searchable Select */}
             <FormField
               control={form.control}
               name='universityName'
@@ -97,30 +103,88 @@ const RegistrationForm: React.FC = () => {
                   <FormLabel className='form-label text-sm'>
                     Select University
                   </FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    disabled={isLoadingOptions || isSubmitting}
-                  >
-                    <FormControl>
-                      <SelectTrigger className='h-10 w-full px-4 text-sm bg-[#232839] border-none rounded-[5px] text-white'>
-                        <SelectValue
-                          placeholder={
-                            isLoadingOptions
-                              ? "Loading universities..."
-                              : "-- Select --"
-                          }
+                  <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          type='button'
+                          role='combobox'
+                          aria-expanded={open}
+                          disabled={isSubmitting}
+                          className={cn(
+                            "h-10 w-full justify-between px-4 text-sm bg-[#232839] border-none rounded-[5px] font-normal hover:bg-[#2a3048]",
+                            field.value ? "text-white" : "text-slate-400",
+                          )}
+                        >
+                          <span className='truncate'>
+                            {field.value || "-- Select University --"}
+                          </span>
+                          <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 text-slate-400' />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+
+                    <PopoverContent
+                      className='p-0 bg-[#1a1f2e] border border-white/10 rounded-[8px] shadow-2xl'
+                      style={{ width: "var(--radix-popover-trigger-width)" }}
+                      align='start'
+                    >
+                      {/* Search input */}
+                      <div className='px-2 pt-2 pb-1 border-b border-white/10'>
+                        <Input
+                          placeholder='Search university...'
+                          value={universitySearch}
+                          onChange={(e) => setUniversitySearch(e.target.value)}
+                          className='h-8 text-sm bg-[#232839] border-none text-white placeholder:text-slate-500 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-[5px]'
+                          autoFocus
                         />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {universities.map((uni) => (
-                        <SelectItem key={uni.id} value={uni.name}>
-                          <span className='text-sm'>{uni.name}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                      </div>
+
+                      {/* Results list */}
+                      <div
+                        className='max-h-52 overflow-y-auto py-1'
+                        style={{
+                          scrollbarWidth: "thin",
+                          scrollbarColor: "#e7c9a5 transparent",
+                        }}
+                      >
+                        {isLoadingOptions ? (
+                          <div className='flex items-center justify-center gap-2 px-4 py-3 text-sm text-slate-400'>
+                            <Loader2 className='h-3 w-3 animate-spin' />
+                            Searching...
+                          </div>
+                        ) : universities.length === 0 ? (
+                          <div className='px-4 py-3 text-sm text-slate-400 text-center'>
+                            {debouncedSearch
+                              ? "No universities found"
+                              : "Type to search universities"}
+                          </div>
+                        ) : (
+                          universities.map((uni) => (
+                            <button
+                              key={uni.id}
+                              type='button'
+                              onClick={() => {
+                                field.onChange(uni.name);
+                                setOpen(false);
+                                setUniversitySearch("");
+                              }}
+                              className={cn(
+                                "w-full text-left px-4 py-2 text-sm text-white hover:bg-[#e7c9a5]/10 flex items-center justify-between gap-2 transition-colors",
+                                field.value === uni.name &&
+                                  "text-[#e7c9a5] bg-[#e7c9a5]/10",
+                              )}
+                            >
+                              <span className='truncate'>{uni.name}</span>
+                              {field.value === uni.name && (
+                                <Check className='h-3.5 w-3.5 shrink-0 text-[#e7c9a5]' />
+                              )}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage className='text-[10px]' />
                 </FormItem>
               )}
@@ -198,7 +262,10 @@ const RegistrationForm: React.FC = () => {
             Have an account already?{" "}
             <Link
               href='/login'
-              className={`text-[#E7C9A5] font-semibold hover:underline ${isSubmitting ? "opacity-50 pointer-events-none" : ""}`}
+              className={cn(
+                "text-[#E7C9A5] font-semibold hover:underline",
+                isSubmitting && "opacity-50 pointer-events-none",
+              )}
             >
               Login
             </Link>
