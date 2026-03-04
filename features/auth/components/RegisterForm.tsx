@@ -2,7 +2,6 @@
 
 import React from "react";
 import Link from "next/link";
-import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import {
   Form,
@@ -12,24 +11,16 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 import AuthCard from "./AuthCard";
 import FileDropzone from "./AuthDropZone";
 import AuthButton from "./AuthButton";
-import useFetchUniversities from "../hooks/useFetchUniversities";
+import UniversitySelect from "./UniversitySelect";
 import useSignupForm from "../hooks/useSignupForm";
-import { register } from "../actions/register";
 import { PasswordInput } from "./PasswordInput";
 
 const RegistrationForm: React.FC = () => {
-  const { universities, isLoadingOptions } = useFetchUniversities();
   const { form, isSubmitting, onSubmit } = useSignupForm();
 
   return (
@@ -58,7 +49,6 @@ const RegistrationForm: React.FC = () => {
                     <FormControl>
                       <Input
                         placeholder='John Doe'
-                        id='fullName'
                         {...field}
                         className='form-input h-10'
                       />
@@ -78,7 +68,6 @@ const RegistrationForm: React.FC = () => {
                       <Input
                         type='email'
                         placeholder='email@university.edu'
-                        id='email'
                         {...field}
                         className='form-input h-10'
                       />
@@ -97,30 +86,13 @@ const RegistrationForm: React.FC = () => {
                   <FormLabel className='form-label text-sm'>
                     Select University
                   </FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    disabled={isLoadingOptions || isSubmitting}
-                  >
-                    <FormControl>
-                      <SelectTrigger className='h-10 w-full px-4 text-sm bg-[#232839] border-none rounded-[5px] text-white'>
-                        <SelectValue
-                          placeholder={
-                            isLoadingOptions
-                              ? "Loading universities..."
-                              : "-- Select --"
-                          }
-                        />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {universities.map((uni) => (
-                        <SelectItem key={uni.id} value={uni.name}>
-                          <span className='text-sm'>{uni.name}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <UniversitySelect
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={isSubmitting}
+                    />
+                  </FormControl>
                   <FormMessage className='text-[10px]' />
                 </FormItem>
               )}
@@ -185,10 +157,7 @@ const RegistrationForm: React.FC = () => {
             />
 
             <div className='pt-2'>
-              <AuthButton
-                isSubmitting={isSubmitting}
-                isLoadingOptions={isLoadingOptions}
-              >
+              <AuthButton isSubmitting={isSubmitting}>
                 {isSubmitting ? "Creating Account..." : "Sign Up"}
               </AuthButton>
             </div>
@@ -198,7 +167,10 @@ const RegistrationForm: React.FC = () => {
             Have an account already?{" "}
             <Link
               href='/login'
-              className={`text-[#E7C9A5] font-semibold hover:underline ${isSubmitting ? "opacity-50 pointer-events-none" : ""}`}
+              className={cn(
+                "text-[#E7C9A5] font-semibold hover:underline",
+                isSubmitting && "opacity-50 pointer-events-none",
+              )}
             >
               Login
             </Link>

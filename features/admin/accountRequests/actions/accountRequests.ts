@@ -97,6 +97,15 @@ export async function approveAccountRequest(studentId: string) {
     include: { user: true },
   });
 
+  await db.notification.create({
+    data: {
+      userId: student.userId,
+      studentId: student.id,
+      message:
+        "🎉 Your library account has been approved. You can now browse and borrow books.",
+    },
+  });
+
   try {
     await sendApprovalEmail(student.user.email, student.user.fullName);
   } catch (err) {
