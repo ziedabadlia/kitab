@@ -6,6 +6,7 @@ import Image from "next/image";
 import noise from "@/assets/images/noise.webp";
 import Announcement from "@/components/Announcement";
 import { getNotifications } from "@/features/notifications/actions/notifications";
+import { DEFAULT_ADMIN_LOGIN_REDIRECT } from "@/routes";
 
 export default async function UserLayout({
   children,
@@ -15,7 +16,7 @@ export default async function UserLayout({
   const session = await auth();
   if (!session) redirect("/login");
   if (session?.user?.role === "ADMIN") {
-    redirect("/admin");
+    redirect(DEFAULT_ADMIN_LOGIN_REDIRECT);
   }
 
   const isRestricted =
