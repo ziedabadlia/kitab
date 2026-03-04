@@ -20,6 +20,8 @@ interface Props {
   status: UserStatus;
   role: Role;
   hasExistingRequest?: boolean;
+  // true on / (home), false on /books/[id] — controls whether title & cover are links
+  showBookLink?: boolean;
 }
 
 const BUTTON_CONTENT = {
@@ -35,6 +37,7 @@ const BookSpotlight = ({
   status,
   role,
   hasExistingRequest = false,
+  showBookLink = false,
 }: Props) => {
   const { categoryName, buttonDisabled, buttonState, handleBorrow, isPending } =
     useBookSpotlight({ book, status, role, hasExistingRequest });
@@ -44,7 +47,7 @@ const BookSpotlight = ({
   return (
     <section className='relative flex flex-col-reverse lg:flex-row items-start justify-between gap-16 lg:gap-8 mt-10 md:mt-20'>
       <div className='flex-1 space-y-5 z-10 w-full'>
-        <BookLink id={book.id} title={book.title}>
+        <BookLink id={book.id} title={book.title} enabled={showBookLink}>
           <h1 className='text-5xl md:text-7xl font-bold text-white leading-[1.1] max-w-xl'>
             {book.title}
           </h1>
@@ -97,7 +100,7 @@ const BookSpotlight = ({
 
       {/* Book Visual */}
       <div className='relative flex-1 flex justify-center items-start w-full lg:w-auto'>
-        <BookLink id={book.id} title={book.title}>
+        <BookLink id={book.id} title={book.title} enabled={showBookLink}>
           <BookCover
             className='w-60 h-[330px] md:w-[276px] md:h-96'
             coverImage={book.coverImageUrl!}
