@@ -89,7 +89,12 @@ export function useBorrowRequestRow(request: RowRequest) {
   const handleStatusChange = async (newStatus: BorrowingStatus) => {
     try {
       setIsUpdating(true);
-      await updateBorrowingStatus(request.id, newStatus);
+      const result = await updateBorrowingStatus(request.id, newStatus);
+
+      if (result?.error) {
+        toast.error(result.error);
+        return;
+      }
 
       // Optimistically update dates to match what the server just wrote
       if (newStatus === "BORROWED") {

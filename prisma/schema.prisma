@@ -177,6 +177,7 @@ model Book {
   @@index([slug])
   @@index([departmentId])
   @@index([borrowCount])
+  @@index([availableCopies])
   @@map("books")
 }
 
@@ -252,6 +253,8 @@ model Borrowing {
   @@index([bookId])
   @@index([status])
   @@index([dueDate])
+  @@index([createdAt]) 
+  @@index([status, createdAt])
   @@map("borrowings")
 }
 

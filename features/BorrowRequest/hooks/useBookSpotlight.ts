@@ -23,6 +23,7 @@ export function useBookSpotlight({
   hasExistingRequest = false,
 }: UseBookSpotlightParams) {
   const isSuspended = role === "STUDENT" && status !== "ACCEPTED";
+  const hasNoCopies = book.availableCopies < 1;
   const categoryName = book.categories?.[0]?.category?.name || "General";
 
   const { requested, isPending, handleBorrow } = useBorrowRequest(
@@ -30,21 +31,29 @@ export function useBookSpotlight({
     hasExistingRequest,
   );
 
-  const buttonDisabled = isSuspended || isPending || requested;
+  const buttonDisabled = isSuspended || isPending || requested || hasNoCopies;
 
-  type ButtonState = "suspended" | "pending" | "requested" | "default";
+  type ButtonState =
+    | "suspended"
+    | "pending"
+    | "requested"
+    | "noCopies"
+    | "default";
 
   const buttonState: ButtonState = isSuspended
     ? "suspended"
-    : isPending
-      ? "pending"
-      : requested
-        ? "requested"
-        : "default";
+    : hasNoCopies
+      ? "noCopies"
+      : isPending
+        ? "pending"
+        : requested
+          ? "requested"
+          : "default";
 
   return {
     categoryName,
     isSuspended,
+    hasNoCopies,
     isPending,
     requested,
     buttonDisabled,
