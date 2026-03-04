@@ -10,12 +10,12 @@ import {
   GetBorrowingRequestsParams,
   GetBorrowingRequestsResponse,
 } from "../types";
+import { createNotification } from "@/features/notifications/actions/notifications";
 import {
   sendBorrowConfirmationEmail,
   sendBorrowRejectedEmail,
   sendBorrowRequestApprovedEmail,
 } from "@/lib/emails/getKitabTemplate/senders/borrowing";
-import { createNotification } from "@/features/notifications/actions/notifications";
 
 export async function getBorrowingRequests({
   page = 1,
@@ -109,7 +109,7 @@ export async function getBorrowingRequests({
 export async function updateBorrowingStatus(
   borrowingId: string,
   newStatus: BorrowingStatus,
-) {
+): Promise<{ error?: string }> {
   const now = new Date();
   const updateData: Prisma.BorrowingUpdateInput = { status: newStatus };
 
@@ -118,6 +118,36 @@ export async function updateBorrowingStatus(
     updateData.dueDate = addDays(now, 9);
   } else if (newStatus === "RETURNED") {
     updateData.returnedAt = now;
+  }
+
+  // Statuses that release the copy back to inventory
+  const RELEASE_STATUSES: BorrowingStatus[] = [
+    "RETURNED",
+    "CANCELLED",
+    "OVERDUE",
+    "LOST",
+    "REJECTED",
+  ];
+
+  // Check inventory before accepting
+  if (newStatus === "ACCEPTED") {
+    const borrowing = await db.borrowing.findUnique({
+      where: { id: borrowingId },
+      select: { bookId: true },
+    });
+
+    if (!borrowing) return { error: "Borrowing record not found." };
+
+    const book = await db.book.findUnique({
+      where: { id: borrowing.bookId },
+      select: { availableCopies: true, title: true },
+    });
+
+    if (!book || book.availableCopies < 1) {
+      return {
+        error: `No available copies left for "${book?.title ?? "this book"}".`,
+      };
+    }
   }
 
   const result = await db.borrowing.updateMany({
@@ -129,6 +159,26 @@ export async function updateBorrowingStatus(
     throw new Error("Cannot update: record not found or already terminal.");
   }
 
+  // Adjust inventory
+  const borrowingForInventory = await db.borrowing.findUnique({
+    where: { id: borrowingId },
+    select: { bookId: true },
+  });
+
+  if (borrowingForInventory) {
+    if (newStatus === "ACCEPTED") {
+      await db.book.update({
+        where: { id: borrowingForInventory.bookId },
+        data: { availableCopies: { decrement: 1 } },
+      });
+    } else if (RELEASE_STATUSES.includes(newStatus)) {
+      await db.book.update({
+        where: { id: borrowingForInventory.bookId },
+        data: { availableCopies: { increment: 1 } },
+      });
+    }
+  }
+
   // Send approval email when borrow request is accepted
   if (newStatus === "ACCEPTED") {
     try {
@@ -137,13 +187,11 @@ export async function updateBorrowingStatus(
         include: {
           book: { select: { title: true, author: true } },
           student: {
-            select: {
-              id: true,
-              user: { select: { email: true, fullName: true } },
-            },
+            include: { user: { select: { email: true, fullName: true } } },
           },
         },
       });
+
       if (borrowing) {
         await Promise.allSettled([
           sendBorrowRequestApprovedEmail(
@@ -154,12 +202,12 @@ export async function updateBorrowingStatus(
           ),
           createNotification(
             borrowing.student.id,
-            `Your borrow request for "${borrowing.book.title}" has been approved! Please collect it within 3 days.`,
+            `Your borrow request for "${borrowing.book.title}" has been approved! Please collect it from the library within 3 days.`,
           ),
         ]);
       }
     } catch (err) {
-      console.error("ACCEPTED notification failed:", err);
+      console.error("Borrow request approval email failed:", err);
     }
   }
 
@@ -171,19 +219,12 @@ export async function updateBorrowingStatus(
         include: {
           book: { select: { title: true } },
           student: {
-            select: {
-              id: true,
-              user: { select: { email: true, fullName: true } },
-            },
+            include: { user: { select: { email: true, fullName: true } } },
           },
         },
       });
+
       if (borrowing?.borrowedAt && borrowing?.dueDate) {
-        const dueDateStr = borrowing.dueDate.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        });
         await Promise.allSettled([
           sendBorrowConfirmationEmail(
             borrowing.student.user.email,
@@ -194,12 +235,12 @@ export async function updateBorrowingStatus(
           ),
           createNotification(
             borrowing.student.id,
-            `You have borrowed "${borrowing.book.title}". Please return it by ${dueDateStr}.`,
+            `You have successfully borrowed "${borrowing.book.title}". Please return it by ${borrowing.dueDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}.`,
           ),
         ]);
       }
     } catch (err) {
-      console.error("BORROWED notification failed:", err);
+      console.error("Borrow confirmation email failed:", err);
     }
   }
 
@@ -229,4 +270,5 @@ export async function updateBorrowingStatus(
   }
 
   revalidatePath("/admin/borrow-requests");
+  return {};
 }

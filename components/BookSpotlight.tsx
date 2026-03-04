@@ -1,11 +1,13 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
-import { BookOpen, Lock } from "lucide-react";
-import { Session } from "next-auth";
+import { BookOpen, Lock, Loader2, CheckCheck } from "lucide-react";
 import starSvg from "@/assets/svg/star.svg";
 import BookCover from "./BookCover";
 import Image from "next/image";
-import { Book, Prisma, Role, UserStatus } from "@prisma/client";
+import { Prisma, Role, UserStatus } from "@prisma/client";
 import BookLink from "./BookLink";
+import { useBookSpotlight } from "@/features/BorrowRequest/hooks/useBookSpotlight";
 
 type BookWithCategories = Prisma.BookGetPayload<{
   include: {
@@ -17,11 +19,27 @@ interface Props {
   book: BookWithCategories;
   status: UserStatus;
   role: Role;
+  hasExistingRequest?: boolean;
 }
 
-const BookSpotlight = ({ book, status, role }: Props) => {
-  const isSuspended = role === "STUDENT" && status !== "ACCEPTED";
-  const categoryName = book.categories?.[0]?.category?.name || "General";
+const BUTTON_CONTENT = {
+  suspended: { icon: Lock, label: "Account Pending" },
+  noCopies: { icon: BookOpen, label: "No Copies Available" },
+  pending: { icon: Loader2, label: "Submitting..." },
+  requested: { icon: CheckCheck, label: "Borrow Book Requested" },
+  default: { icon: BookOpen, label: "Borrow Book Request" },
+} as const;
+
+const BookSpotlight = ({
+  book,
+  status,
+  role,
+  hasExistingRequest = false,
+}: Props) => {
+  const { categoryName, buttonDisabled, buttonState, handleBorrow, isPending } =
+    useBookSpotlight({ book, status, role, hasExistingRequest });
+
+  const { icon: Icon, label } = BUTTON_CONTENT[buttonState];
 
   return (
     <section className='relative flex flex-col-reverse lg:flex-row items-start justify-between gap-16 lg:gap-8 mt-10 md:mt-20'>
@@ -37,7 +55,7 @@ const BookSpotlight = ({ book, status, role }: Props) => {
             By{" "}
             <span className='text-[#EED1AC] font-semibold'>{book.author}</span>
           </p>
-          <span className='hidden md:block w-1 h-1 bg-slate-500 rounded-full ' />
+          <span className='hidden md:block w-1 h-1 bg-slate-500 rounded-full' />
           <p className='text-[#EED1AC] font-semibold'>{categoryName}</p>
           <span className='hidden md:block w-1 h-1 bg-slate-500 rounded-full' />
           <p className='flex items-center gap-1'>
@@ -68,33 +86,25 @@ const BookSpotlight = ({ book, status, role }: Props) => {
         </p>
 
         <Button
-          disabled={isSuspended}
+          onClick={!buttonDisabled ? handleBorrow : undefined}
+          disabled={buttonDisabled}
           className='bg-[#E7C9A5] text-[#05070A] hover:bg-[#E7C9A5]/90 px-8 py-6 font-bebas rounded-md uppercase tracking-[1.5px] font-normal text-xl transition-all active:scale-95 disabled:opacity-50 disabled:bg-slate-800 disabled:text-slate-500'
         >
-          {isSuspended ? (
-            <>
-              <Lock className='mr-2 h-5 w-5' /> Account Pending
-            </>
-          ) : (
-            <>
-              <BookOpen className='mr-2 h-5 w-5' /> Borrow Book Request
-            </>
-          )}
+          <Icon className={`mr-2 h-5 w-5 ${isPending ? "animate-spin" : ""}`} />
+          {label}
         </Button>
       </div>
 
-      {/* 2. BOOK VISUAL SECTION */}
+      {/* Book Visual */}
       <div className='relative flex-1 flex justify-center items-start w-full lg:w-auto'>
-        <div className='relative'>
-          <BookLink id={book.id} title={book.title}>
-            <BookCover
-              className='w-60 h-[330px] md:w-[276px] md:h-96'
-              coverImage={book.coverImageUrl!}
-              coverColor={book.coverColor}
-              variant='hero'
-            />
-          </BookLink>
-        </div>
+        <BookLink id={book.id} title={book.title}>
+          <BookCover
+            className='w-60 h-[330px] md:w-[276px] md:h-96'
+            coverImage={book.coverImageUrl!}
+            coverColor={book.coverColor}
+            variant='hero'
+          />
+        </BookLink>
       </div>
     </section>
   );

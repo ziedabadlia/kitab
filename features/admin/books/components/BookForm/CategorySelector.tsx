@@ -1,14 +1,16 @@
-import { useState } from "react";
+"use client";
+
+import * as React from "react";
+import { Check, X, Plus, Loader2 } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
-import { Check, ChevronsUpDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import {
   Command,
-  CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
+  CommandEmpty,
 } from "@/components/ui/command";
 import {
   Popover,
@@ -16,6 +18,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { BookFormValues } from "../../validation/bookSchema";
+import { toast } from "sonner";
+import { createCategory } from "../../actions/taxonomy";
 
 interface Props {
   form: UseFormReturn<BookFormValues>;
@@ -23,31 +27,45 @@ interface Props {
 }
 
 export function CategorySelector({ form, categories }: Props) {
-  const [open, setOpen] = useState(false);
-  const {
-    setValue,
-    watch,
-    formState: { errors },
-  } = form;
+  const [open, setOpen] = React.useState(false);
+  const [search, setSearch] = React.useState("");
+  const [isCreating, setIsCreating] = React.useState(false);
+  const [items, setItems] = React.useState(categories);
 
-  const selectedCategoryIds = watch("categoryIds") || [];
-  const selectedCategories = categories.filter((cat) =>
-    selectedCategoryIds.includes(cat.id),
+  const selected: string[] = form.watch("categoryIds") ?? [];
+  const trimmed = search.trim();
+  const exactMatch = items.some(
+    (c) => c.name.toLowerCase() === trimmed.toLowerCase(),
   );
+  const showCreate = trimmed.length > 0 && !exactMatch;
 
-  const toggleCategory = (categoryId: string) => {
-    const newIds = selectedCategoryIds.includes(categoryId)
-      ? selectedCategoryIds.filter((id) => id !== categoryId)
-      : [...selectedCategoryIds, categoryId];
-    setValue("categoryIds", newIds, { shouldValidate: true });
+  const toggle = (id: string) => {
+    const next = selected.includes(id)
+      ? selected.filter((s) => s !== id)
+      : [...selected, id];
+    form.setValue("categoryIds", next, { shouldValidate: true });
   };
 
-  const removeCategory = (categoryId: string) => {
-    setValue(
-      "categoryIds",
-      selectedCategoryIds.filter((id) => id !== categoryId),
-      { shouldValidate: true },
-    );
+  const handleCreate = async () => {
+    if (!trimmed) return;
+    setIsCreating(true);
+    try {
+      const result = await createCategory(trimmed);
+      if ("error" in result) {
+        toast.error(result.error);
+        return;
+      }
+      setItems((prev) => [...prev, result]);
+      form.setValue("categoryIds", [...selected, result.id], {
+        shouldValidate: true,
+      });
+      setSearch("");
+      toast.success(`Category "${result.name}" created.`);
+    } catch {
+      toast.error("Failed to create category.");
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -56,76 +74,96 @@ export function CategorySelector({ form, categories }: Props) {
         Categories <span className='text-red-500'>*</span>
       </label>
 
+      {selected.length > 0 && (
+        <div className='flex flex-wrap gap-1.5'>
+          {selected.map((id) => {
+            const cat = items.find((c) => c.id === id);
+            if (!cat) return null;
+            return (
+              <span
+                key={id}
+                className='inline-flex items-center gap-1 bg-[#253585]/10 text-[#253585] text-xs font-medium px-2.5 py-1 rounded-full'
+              >
+                {cat.name}
+                <button
+                  type='button'
+                  onClick={() => toggle(id)}
+                  className='hover:text-red-500 transition-colors'
+                >
+                  <X className='h-3 w-3' />
+                </button>
+              </span>
+            );
+          })}
+        </div>
+      )}
+
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <div
-            role='combobox'
-            aria-expanded={open}
-            tabIndex={0}
-            className={cn(
-              "flex min-h-10 w-full flex-wrap items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm cursor-pointer hover:bg-slate-100",
-            )}
+          <button
+            type='button'
+            className='w-full h-10 px-3 text-sm text-left bg-slate-50 border border-slate-200 rounded-md text-slate-400 hover:border-slate-300 transition-colors'
           >
-            <div className='flex flex-wrap gap-1 flex-1'>
-              {selectedCategories.length > 0 ? (
-                selectedCategories.map((category) => (
-                  <Badge
-                    key={category.id}
-                    variant='secondary'
-                    className='bg-[#253585] text-white hover:bg-blue-900'
-                  >
-                    {category.name}
-                    <button
-                      type='button'
-                      className='ml-1 rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        removeCategory(category.id);
-                      }}
-                    >
-                      <X className='h-3 w-3 text-white hover:text-slate-200' />
-                    </button>
-                  </Badge>
-                ))
-              ) : (
-                <span className='text-slate-500 text-sm'>
-                  Select categories...
-                </span>
-              )}
-            </div>
-            <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
-          </div>
+            {selected.length > 0
+              ? `${selected.length} selected — click to edit`
+              : "Select or create categories..."}
+          </button>
         </PopoverTrigger>
-        <PopoverContent className='w-[400px] p-0' align='start'>
-          <Command>
-            <CommandInput placeholder='Search categories...' />
-            <CommandEmpty>No category found.</CommandEmpty>
-            <CommandGroup className='max-h-64 overflow-auto'>
-              {categories.map((category) => (
-                <CommandItem
-                  key={category.id}
-                  value={category.name}
-                  onSelect={() => toggleCategory(category.id)}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      selectedCategoryIds.includes(category.id)
-                        ? "opacity-100"
-                        : "opacity-0",
+
+        <PopoverContent
+          className='w-[--radix-popover-trigger-width] p-0'
+          align='start'
+        >
+          <Command className='border-none'>
+            <CommandInput
+              placeholder='Search or create category...'
+              className='h-9 text-slate-900 placeholder:text-slate-400'
+              value={search}
+              onValueChange={setSearch}
+            />
+            <CommandList>
+              {items.length === 0 && !showCreate && (
+                <CommandEmpty>No categories found.</CommandEmpty>
+              )}
+              <CommandGroup>
+                {items.map((cat) => (
+                  <CommandItem
+                    key={cat.id}
+                    value={cat.name}
+                    onSelect={() => toggle(cat.id)}
+                    className='cursor-pointer'
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        selected.includes(cat.id) ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                    {cat.name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+
+              {showCreate && (
+                <CommandGroup>
+                  <CommandItem
+                    onSelect={handleCreate}
+                    disabled={isCreating}
+                    className='cursor-pointer text-[#253585] font-medium border-t border-slate-100'
+                  >
+                    {isCreating ? (
+                      <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                    ) : (
+                      <Plus className='mr-2 h-4 w-4' />
                     )}
-                  />
-                  {category.name}
-                </CommandItem>
-              ))}
-            </CommandGroup>
+                    Create "{trimmed}"
+                  </CommandItem>
+                </CommandGroup>
+              )}
+            </CommandList>
           </Command>
         </PopoverContent>
       </Popover>
-      {errors.categoryIds && (
-        <p className='text-red-500 text-xs'>{errors.categoryIds.message}</p>
-      )}
     </div>
   );
 }

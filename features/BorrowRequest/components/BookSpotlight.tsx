@@ -24,6 +24,7 @@ interface Props {
 
 const BUTTON_CONTENT = {
   suspended: { icon: Lock, label: "Account Pending" },
+  noCopies: { icon: BookOpen, label: "No Copies Available" },
   pending: { icon: Loader2, label: "Submitting..." },
   requested: { icon: CheckCheck, label: "Borrow Book Requested" },
   default: { icon: BookOpen, label: "Borrow Book Request" },
