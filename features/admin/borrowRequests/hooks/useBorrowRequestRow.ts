@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { BorrowingStatus } from "@prisma/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -12,6 +13,7 @@ export interface RowRequest {
   returnedAt: string | null;
   dueDate: string | null;
   requestedAt: string;
+  rawBorrowedAt: string | null;
   rawDueDate: string | null;
   rawReturnedAt: string | null;
   book: {
@@ -25,13 +27,12 @@ export interface RowRequest {
   };
 }
 
-const BORROW_PERIOD_DAYS = 9;
-
 function fmt(date: Date): string {
   return format(date, "MMM dd, yyyy");
 }
 
 export function useBorrowRequestRow(request: RowRequest) {
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<BorrowingStatus>(request.status);
   const [borrowedAt, setBorrowedAt] = useState<string | null>(
     request.borrowedAt,
@@ -39,6 +40,9 @@ export function useBorrowRequestRow(request: RowRequest) {
   const [dueDate, setDueDate] = useState<string | null>(request.dueDate);
   const [returnedAt, setReturnedAt] = useState<string | null>(
     request.returnedAt,
+  );
+  const [rawBorrowedAt, setRawBorrowedAt] = useState<string | null>(
+    request.rawBorrowedAt,
   );
   const [rawDueDate, setRawDueDate] = useState<string | null>(
     request.rawDueDate,
@@ -65,24 +69,21 @@ export function useBorrowRequestRow(request: RowRequest) {
   const statusStyles = getStatusStyles(status, isLateReturn || false);
 
   const statusOptions = (() => {
-    if (status === "PENDING") {
+    if (status === "PENDING")
       return [
         { value: "ACCEPTED", label: "Accept" },
         { value: "REJECTED", label: "Reject" },
         { value: "CANCELLED", label: "Cancel" },
       ];
-    }
-    if (status === "ACCEPTED") {
+    if (status === "ACCEPTED")
       return [
         { value: "BORROWED", label: "Mark Borrowed" },
         { value: "CANCELLED", label: "Cancel" },
       ];
-    }
-    if (status === "BORROWED") {
+    if (status === "BORROWED")
       return isOverdue
         ? [{ value: "RETURNED", label: "Late Return" }]
         : [{ value: "RETURNED", label: "Return" }];
-    }
     return [];
   })();
 
@@ -96,23 +97,28 @@ export function useBorrowRequestRow(request: RowRequest) {
         return;
       }
 
-      // Optimistically update dates to match what the server just wrote
-      if (newStatus === "BORROWED") {
-        const now = new Date();
-        const due = new Date(now);
-        due.setDate(due.getDate() + BORROW_PERIOD_DAYS);
-        setBorrowedAt(fmt(now));
-        setDueDate(fmt(due));
-        setRawDueDate(due.toISOString());
+      // Use dates returned from server so optimistic UI stays in sync
+      // with whatever borrow period the server calculates
+      // Close receipt while state updates to force remount with fresh data
+      setIsReceiptOpen(false);
+
+      if (newStatus === "BORROWED" && result?.borrowedAt && result?.dueDate) {
+        setBorrowedAt(fmt(new Date(result.borrowedAt)));
+        setDueDate(fmt(new Date(result.dueDate)));
+        setRawBorrowedAt(result.borrowedAt);
+        setRawDueDate(result.dueDate);
       }
 
-      if (newStatus === "RETURNED") {
-        const now = new Date();
-        setReturnedAt(fmt(now));
-        setRawReturnedAt(now.toISOString());
+      if (newStatus === "RETURNED" && result?.returnedAt) {
+        setReturnedAt(fmt(new Date(result.returnedAt)));
+        setRawReturnedAt(result.returnedAt);
       }
 
       setStatus(newStatus);
+
+      // Cancel any in-flight refetches so server data does not
+      // overwrite the optimistic state we just set above
+      await queryClient.cancelQueries({ queryKey: ["borrow-requests"] });
       toast.success("Status updated successfully");
     } catch {
       toast.error("Failed to update status");
@@ -128,6 +134,9 @@ export function useBorrowRequestRow(request: RowRequest) {
     borrowedAt,
     dueDate,
     returnedAt,
+    rawBorrowedAt,
+    rawDueDate,
+    rawReturnedAt,
     isUpdating,
     isTerminal,
     isOverdue,

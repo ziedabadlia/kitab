@@ -6,7 +6,6 @@ import { UserTableSkeleton } from "../../users/components/UserTableSkeleton";
 import { TablePagination } from "../../users/components/UsersTable/TablePagination";
 import { BorrowRequestRow } from "./BorrowRequestRow";
 import BorrowTableHeader from "./BorrowTableHeader";
-import { AccountTableEmptyState } from "../../accountRequests/components/AccountTableEmptyState";
 import { TableEmptyState } from "@/components/TableEmptyState";
 import { BorrowRequest } from "../types";
 

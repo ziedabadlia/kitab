@@ -5,56 +5,49 @@ import { Borrowing } from "@prisma/client";
 
 function getBookPriority(book: Borrowing): number {
   const now = new Date();
-  const isReturned = book.status === "RETURNED";
-
-  if (isReturned) return 4;
-
+  if (book.status === "RETURNED") return 4;
   if (!book.dueDate) return 3;
-
   const dueDate = new Date(book.dueDate);
-
   if (book.status === "OVERDUE" || dueDate < now) return 1;
-
   const daysUntilDue = Math.ceil(
     (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
   );
   if (daysUntilDue > 0 && daysUntilDue <= 3) return 2;
-
   return 3;
 }
 
 export async function GET() {
   try {
     const session = await auth();
-    if (!session?.user) {
+    if (!session?.user)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
+    // Fetch profile and borrowings in a single query instead of two sequential ones
     const profile = await db.user.findUnique({
       where: { id: session.user.id },
-      include: { student: true },
-    });
-
-    if (!profile?.student) {
-      return NextResponse.json({ error: "Student not found" }, { status: 404 });
-    }
-
-    const borrowedBooks = await db.borrowing.findMany({
-      where: { studentId: profile.student.id },
       include: {
-        book: {
+        student: {
           include: {
-            categories: { include: { category: true } },
+            borrowings: {
+              include: {
+                book: {
+                  include: {
+                    categories: { include: { category: true } },
+                  },
+                },
+              },
+            },
           },
         },
       },
     });
 
-    const sortedBooks = borrowedBooks.sort((a, b) => {
+    if (!profile?.student)
+      return NextResponse.json({ error: "Student not found" }, { status: 404 });
+
+    const sortedBooks = [...profile.student.borrowings].sort((a, b) => {
       const priorityDiff = getBookPriority(a) - getBookPriority(b);
       if (priorityDiff !== 0) return priorityDiff;
-
-      // Same priority: sort by most recently created
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 

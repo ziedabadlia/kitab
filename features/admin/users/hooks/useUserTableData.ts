@@ -19,9 +19,6 @@ const DEFAULT_SEARCH = "";
 const DEFAULT_SORT = "createdAt";
 const DEFAULT_DIR = "desc";
 
-// Captured once at module load — tells React Query the server data is "fresh as of now".
-// Without this, initialData defaults to epoch 0 → immediately stale → background refetch
-// fires on mount → cache updates mid-render → totalPages changes → phantom extra pages.
 const SERVER_DATA_TIMESTAMP = Date.now();
 
 export function useUserTableData(initialData: UsersPage) {
@@ -31,7 +28,6 @@ export function useUserTableData(initialData: UsersPage) {
   const queryClient = useQueryClient();
   const [, startTransition] = useTransition();
 
-  // URL state
   const urlSearch = searchParams.get("search") ?? DEFAULT_SEARCH;
   const urlSort = searchParams.get("sort");
   const urlDir = searchParams.get("dir");
@@ -53,28 +49,24 @@ export function useUserTableData(initialData: UsersPage) {
     dir: urlDir ?? DEFAULT_DIR,
   };
 
-  // Sync URL search to local input
   useEffect(() => {
     setPage(1);
     setLocalSearch(urlSearch);
   }, [urlSearch, urlSort, urlDir]);
 
-  const { data, isFetching, isLoading } = useQuery({
+  const { data, isPlaceholderData, isLoading } = useQuery({
     queryKey: usersKeys.list(queryParams),
     queryFn: () => fetchUsers(queryParams),
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 15,
-    // initialDataUpdatedAt is critical — without it React Query treats initialData
-    // as stale from epoch 0 and fires an immediate background refetch on mount.
+    refetchInterval: isDefaultView ? 5000 : false,
+    refetchIntervalInBackground: false,
     ...(isDefaultView
       ? { initialData, initialDataUpdatedAt: SERVER_DATA_TIMESTAMP }
       : {}),
   });
 
-  // Prefetch next page — depend only on `page`, NOT `data?.totalPages`.
-  // Including data?.totalPages in deps causes a cascade: prefetch resolves →
-  // data changes → effect re-runs → next page prefetches → pagination grows.
   useEffect(() => {
     const cached = queryClient.getQueryData<UsersPage>(
       usersKeys.list(queryParams),
@@ -103,7 +95,6 @@ export function useUserTableData(initialData: UsersPage) {
     [router, pathname, searchParams],
   );
 
-  // Debounced search
   useEffect(() => {
     if (localSearch === urlSearch) return;
     const timer = setTimeout(
@@ -129,7 +120,8 @@ export function useUserTableData(initialData: UsersPage) {
     requestSort,
     data,
     isLoading,
-    isPlaceholderData: isFetching && !isLoading,
+    // Use React Query's isPlaceholderData directly — avoids dimming on background polling
+    isPlaceholderData,
     updateUrl,
   };
 }

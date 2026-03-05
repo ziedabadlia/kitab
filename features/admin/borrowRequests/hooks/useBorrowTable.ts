@@ -22,10 +22,11 @@ export function useBorrowTable(initialData: any) {
   const [localQuery, setLocalQuery] = useState(urlQuery);
   const [page, setPage] = useState(1);
 
-  const { data, isLoading, isFetching } = useBorrowRequestsQuery(
-    { page, query: urlQuery, sort: sortField, dir: sortDirection },
-    initialData,
-  );
+  const { data, isLoading, isFetching, isPlaceholderData } =
+    useBorrowRequestsQuery(
+      { page, query: urlQuery, sort: sortField, dir: sortDirection },
+      initialData,
+    );
 
   const updateUrl = useCallback(
     (updates: Record<string, string | null>) => {
@@ -55,7 +56,8 @@ export function useBorrowTable(initialData: any) {
     processedData: data?.requests ?? [],
     totalPages: data?.totalPages ?? 1,
     isLoading,
-    isPlaceholderData: isFetching && !isLoading,
+    // Only dim the table when paginating/searching, not during background polling
+    isPlaceholderData,
     hasNoData: (data?.totalRequests ?? 0) === 0 && urlQuery === "",
     setQuery: setLocalQuery,
     clearQuery: () => {

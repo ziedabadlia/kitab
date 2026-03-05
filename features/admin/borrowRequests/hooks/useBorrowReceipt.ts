@@ -1,23 +1,5 @@
-import { useState, useMemo } from "react";
-
-export interface BorrowRequest {
-  id: string;
-  status: string;
-  borrowedAt: string | null;
-  returnedAt: string | null;
-  dueDate: string | null;
-  requestedAt: string;
-  book: {
-    title: string;
-    author: string;
-    genre: string | null;
-    coverImageUrl: string;
-    coverColor: string;
-  };
-  student: {
-    fullName: string;
-  };
-}
+import { useState, useEffect } from "react";
+import { BorrowRequest } from "../types";
 
 interface UseBorrowReceiptProps {
   request: BorrowRequest;
@@ -31,19 +13,33 @@ export function useBorrowReceipt({
   setIsOpen,
 }: UseBorrowReceiptProps) {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [latestRequest, setLatestRequest] = useState<BorrowRequest>(request);
+  const [isFetching, setIsFetching] = useState(true);
 
-  const duration = useMemo(() => {
-    if (!request.borrowedAt || !request.dueDate) return "N/A";
-    const borrowed = new Date(request.borrowedAt);
-    const due = new Date(request.dueDate);
+  // Fetch fresh data every time receipt opens
+  useEffect(() => {
+    setIsFetching(true);
+    fetch(`/api/admin/borrow-requests/${request.id}`)
+      .then((res) => res.json())
+      .then((data) => setLatestRequest(data))
+      .catch(() => setLatestRequest(request))
+      .finally(() => setIsFetching(false));
+  }, [request.id]);
+
+  const duration = (() => {
+    const borrowedRaw = latestRequest.rawBorrowedAt;
+    const dueRaw = latestRequest.rawDueDate;
+    if (!borrowedRaw || !dueRaw) return "N/A";
+    const borrowed = new Date(borrowedRaw);
+    const due = new Date(dueRaw);
+    if (isNaN(borrowed.getTime()) || isNaN(due.getTime())) return "N/A";
     const days = Math.ceil(
       (due.getTime() - borrowed.getTime()) / (1000 * 60 * 60 * 24),
     );
     return `${days} day${days !== 1 ? "s" : ""}`;
-  }, [request.borrowedAt, request.dueDate]);
+  })();
 
   const handlePrint = () => window.print();
-
   const handleClose = () => setIsOpen(false);
 
   const handleSavePdf = async () => {
@@ -52,19 +48,14 @@ export function useBorrowReceipt({
       const response = await fetch("/api/generate-receipt-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          request,
-          isLateReturn,
-        }),
+        body: JSON.stringify({ request: latestRequest, isLateReturn }),
       });
-
       if (!response.ok) throw new Error("Failed to generate PDF");
-
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `receipt-${request.id.slice(-8)}.pdf`;
+      a.download = `receipt-${latestRequest.id.slice(-8)}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -79,7 +70,9 @@ export function useBorrowReceipt({
 
   return {
     isGeneratingPdf,
+    isFetching,
     duration,
+    latestRequest,
     handlePrint,
     handleClose,
     handleSavePdf,
