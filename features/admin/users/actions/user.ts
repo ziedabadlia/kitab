@@ -75,7 +75,6 @@ export async function getUsersAction({
 
 export async function deleteUserAction(userId: string, email: string) {
   try {
-    // Delete notifications first — no cascade on studentId FK
     const student = await db.student.findUnique({
       where: { userId },
       select: { id: true },

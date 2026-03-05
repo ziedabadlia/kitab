@@ -3,9 +3,16 @@ import { auth } from "@/features/auth/auth";
 import { redirect, notFound } from "next/navigation";
 import BookCover from "@/components/BookCover";
 import BookLink from "@/components/BookLink";
-import BookSpotlight from "@/features/BorrowRequest/components/BookSpotlight";
 import { getBookReviews } from "@/features/userProfile/actions/reviews";
 import BookReviews from "@/features/userProfile/components/Reviews/Bookreviews";
+import BookSpotlight from "@/features/BorrowRequest/components/BookSpotlight";
+
+export const revalidate = 300;
+
+export async function generateStaticParams() {
+  const books = await db.book.findMany({ select: { id: true } });
+  return books.map((book) => ({ id: book.id }));
+}
 
 export default async function BookDetailsPage({
   params,
@@ -16,60 +23,37 @@ export default async function BookDetailsPage({
   const session = await auth();
   if (!session) redirect("/login");
 
-  const [book, student] = await Promise.all([
+  const [book, reviewsData] = await Promise.all([
     db.book.findUnique({
       where: { id },
       include: { categories: { include: { category: true } } },
     }),
-    db.student.findUnique({
-      where: { userId: session.user.id },
-      select: { id: true },
-    }),
+    getBookReviews(id),
   ]);
 
   if (!book) notFound();
 
-  // Run remaining queries in parallel
   const categoryId = book.categories?.[0]?.categoryId;
-
-  const [existingRequest, similarBooks, reviewsData] = await Promise.all([
-    student
-      ? db.borrowing.findFirst({
-          where: {
-            studentId: student.id,
-            bookId: book.id,
-            status: { notIn: ["RETURNED", "REJECTED", "CANCELLED", "LOST"] },
-          },
-          select: { id: true },
-        })
-      : null,
-
-    categoryId
-      ? db.book.findMany({
-          where: {
-            categories: { some: { categoryId } },
-            id: { not: book.id },
-          },
-          take: 6,
-        })
-      : [],
-
-    getBookReviews(book.id),
-  ]);
+  const similarBooks = categoryId
+    ? await db.book.findMany({
+        where: {
+          categories: { some: { categoryId } },
+          id: { not: book.id },
+        },
+        take: 6,
+      })
+    : [];
 
   return (
     <div className='container mx-auto px-5 md:px-10 lg:px-20 pb-20'>
-      {/* Hero Spotlight */}
       <BookSpotlight
         book={book}
         status={session.user.status}
         role={session.user.role}
-        hasExistingRequest={!!existingRequest}
+        showBookLink={false}
       />
 
-      {/* Summary, Video, and Similar Books */}
       <div className='mt-20 flex flex-col lg:flex-row gap-16'>
-        {/* LEFT: Summary & Video */}
         <div className='flex-[1.5] space-y-12'>
           {book.videoUrl && (
             <section>
@@ -95,11 +79,9 @@ export default async function BookDetailsPage({
             </div>
           </section>
 
-          {/* Reviews */}
           <BookReviews bookId={book.id} initialData={reviewsData} />
         </div>
 
-        {/* RIGHT: Similar Books */}
         <aside className='flex-1'>
           <h2 className='text-2xl font-bold text-white mb-8'>
             More similar books

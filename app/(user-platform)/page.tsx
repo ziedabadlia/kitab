@@ -7,33 +7,15 @@ import PopularBooks, {
 import { db } from "@/lib/db";
 import { Suspense } from "react";
 
+export const revalidate = 300;
+
 const HomePage = async () => {
   const session = await auth();
 
-  const [featuredBook, student] = await Promise.all([
-    db.book.findFirst({
-      include: { categories: { include: { category: true } } },
-      orderBy: { createdAt: "desc" },
-    }),
-    session?.user?.id
-      ? db.student.findUnique({
-          where: { userId: session.user.id },
-          select: { id: true },
-        })
-      : null,
-  ]);
-
-  const existingRequest =
-    featuredBook && student
-      ? await db.borrowing.findFirst({
-          where: {
-            studentId: student.id,
-            bookId: featuredBook.id,
-            status: { notIn: ["RETURNED", "REJECTED", "CANCELLED", "LOST"] },
-          },
-          select: { id: true },
-        })
-      : null;
+  const featuredBook = await db.book.findFirst({
+    include: { categories: { include: { category: true } } },
+    orderBy: { createdAt: "desc" },
+  });
 
   return (
     <div className='flex flex-col gap-20 pb-10'>
@@ -42,7 +24,6 @@ const HomePage = async () => {
           book={featuredBook}
           status={session?.user.status!}
           role={session?.user.role}
-          hasExistingRequest={!!existingRequest}
           showBookLink
         />
       )}

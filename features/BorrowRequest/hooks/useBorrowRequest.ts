@@ -1,12 +1,22 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { toast } from "sonner";
 import { createBorrowRequest } from "../actions/borrowRequest";
 
-export function useBorrowRequest(bookId: string, hasExistingRequest: boolean) {
+export function useBorrowRequest(bookId: string) {
   const [isPending, startTransition] = useTransition();
-  const [requested, setRequested] = useState(hasExistingRequest);
+  const [requested, setRequested] = useState(false);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
+
+  // Fetch borrow status client-side so the page can be ISR cached
+  useEffect(() => {
+    fetch(`/api/borrow-status?bookId=${bookId}`)
+      .then((res) => res.json())
+      .then(({ hasRequest }) => setRequested(hasRequest))
+      .catch(() => {}) // silently fail — button defaults to enabled
+      .finally(() => setIsCheckingStatus(false));
+  }, [bookId]);
 
   const handleBorrow = () => {
     startTransition(async () => {
@@ -23,6 +33,7 @@ export function useBorrowRequest(bookId: string, hasExistingRequest: boolean) {
   return {
     requested,
     isPending,
+    isCheckingStatus,
     handleBorrow,
   };
 }
