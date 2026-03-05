@@ -31,6 +31,7 @@ export async function createDepartment(
   });
 
   revalidatePath("/admin/books");
+  revalidatePath("/admin/books/new");
   return { id: department.id, name: department.name };
 }
 
@@ -54,5 +55,6 @@ export async function createCategory(
   });
 
   revalidatePath("/admin/books");
+  revalidatePath("/admin/books/new");
   return { id: category.id, name: category.name };
 }

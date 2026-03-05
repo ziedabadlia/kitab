@@ -10,16 +10,13 @@ import BookLink from "@/components/BookLink";
 import BookCover from "@/components/BookCover";
 
 type BookWithCategories = Prisma.BookGetPayload<{
-  include: {
-    categories: { include: { category: true } };
-  };
+  include: { categories: { include: { category: true } } };
 }>;
 
 interface Props {
   book: BookWithCategories;
   status: UserStatus;
   role: Role;
-  hasExistingRequest?: boolean;
   showBookLink?: boolean;
 }
 
@@ -28,20 +25,22 @@ const BUTTON_CONTENT = {
   noCopies: { icon: BookOpen, label: "No Copies Available" },
   pending: { icon: Loader2, label: "Submitting..." },
   requested: { icon: CheckCheck, label: "Borrow Book Requested" },
+  checking: { icon: Loader2, label: "Loading..." },
   default: { icon: BookOpen, label: "Borrow Book Request" },
 } as const;
 
-const BookSpotlight = ({
-  book,
-  status,
-  role,
-  hasExistingRequest = false,
-  showBookLink = false,
-}: Props) => {
-  const { categoryName, buttonDisabled, buttonState, handleBorrow, isPending } =
-    useBookSpotlight({ book, status, role, hasExistingRequest });
+const BookSpotlight = ({ book, status, role, showBookLink = false }: Props) => {
+  const {
+    categoryName,
+    buttonDisabled,
+    buttonState,
+    handleBorrow,
+    isPending,
+    isCheckingStatus,
+  } = useBookSpotlight({ book, status, role });
 
   const { icon: Icon, label } = BUTTON_CONTENT[buttonState];
+  const isSpinning = isPending || isCheckingStatus;
 
   return (
     <section className='relative flex flex-col-reverse lg:flex-row items-start justify-between gap-16 lg:gap-8 mt-10 md:mt-20'>
@@ -92,12 +91,13 @@ const BookSpotlight = ({
           disabled={buttonDisabled}
           className='bg-[#E7C9A5] text-[#05070A] hover:bg-[#E7C9A5]/90 px-8 py-6 font-bebas rounded-md uppercase tracking-[1.5px] font-normal text-xl transition-all active:scale-95 disabled:opacity-50 disabled:bg-slate-800 disabled:text-slate-500'
         >
-          <Icon className={`mr-2 h-5 w-5 ${isPending ? "animate-spin" : ""}`} />
+          <Icon
+            className={`mr-2 h-5 w-5 ${isSpinning ? "animate-spin" : ""}`}
+          />
           {label}
         </Button>
       </div>
 
-      {/* Book Visual */}
       <div className='relative flex-1 flex justify-center items-start w-full lg:w-auto'>
         <BookLink id={book.id} title={book.title} enabled={showBookLink}>
           <BookCover

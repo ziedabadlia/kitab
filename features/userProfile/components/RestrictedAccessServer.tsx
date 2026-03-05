@@ -18,6 +18,7 @@ export default function RestrictedAccess({
 }: RestrictedAccessProps) {
   const mailtoLink = generateSupportMailto(status, userName, userEmail);
   const statusMessage = getAccountStatusMessage(status);
+  const displayStatus = "Under Review";
 
   return (
     <main className='container mx-auto px-4 py-10'>
@@ -45,17 +46,19 @@ export default function RestrictedAccess({
                 <div className='flex items-center gap-2'>
                   <Lock className='w-4 h-4 text-red-400' />
                   <span className='text-red-400 text-sm font-bold uppercase tracking-wider'>
-                    {status} Account
+                    {displayStatus} Account
                   </span>
                 </div>
               </div>
 
               {/* Context Info */}
               <div className='bg-slate-900/50 rounded-xl p-4 border border-slate-800 w-full text-slate-300 text-sm leading-relaxed'>
-                Your account status is currently set to{" "}
-                <span className='text-red-400 font-semibold'>{status}</span>.
-                Only accounts with{" "}
-                <span className='text-emerald-400 font-semibold'>ACCEPTED</span>{" "}
+                Your account is currently{" "}
+                <span className='text-red-400 font-semibold'>
+                  {displayStatus}
+                </span>
+                . Only accounts with{" "}
+                <span className='text-emerald-400 font-semibold'>Accepted</span>{" "}
                 status can access this page.
               </div>
 
