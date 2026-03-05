@@ -37,6 +37,10 @@ export function useBorrowRequestsQuery(
     queryFn: () => fetchBorrowRequests(params),
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 5,
+    // Only poll on page 1 with no active search — avoids hammering the DB
+    // while the admin is browsing other pages or searching
+    refetchInterval: isDefaultView ? 5000 : false,
+    refetchIntervalInBackground: false, // pause when tab is not focused
     ...(isDefaultView && initialData
       ? { initialData, initialDataUpdatedAt: SERVER_DATA_TIMESTAMP }
       : {}),

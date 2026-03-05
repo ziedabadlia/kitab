@@ -29,7 +29,7 @@ export function useBookTable(initialData: BooksPage) {
     setLocalSearch(urlSearch);
   }, [urlSearch]);
 
-  const { data, isFetching, isLoading } = useBooksQuery(
+  const { data, isPlaceholderData, isLoading } = useBooksQuery(
     { page, search: urlSearch },
     initialData,
   );
@@ -85,7 +85,7 @@ export function useBookTable(initialData: BooksPage) {
     processedData: data?.books ?? [],
     totalPages: data?.totalPages ?? 1,
     isLoading,
-    isPlaceholderData: isFetching && !isLoading,
+    isPlaceholderData,
     deleteModal,
     setDeleteModal,
     handleConfirmDelete,

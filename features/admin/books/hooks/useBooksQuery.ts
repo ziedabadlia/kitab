@@ -18,10 +18,11 @@ export function useBooksQuery(
     queryFn: () => fetchBooks(params),
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 5,
+    refetchInterval: isDefaultView ? 5000 : false,
+    refetchIntervalInBackground: false,
     ...(isDefaultView ? { initialData, initialDataUpdatedAt: Date.now() } : {}),
   });
 
-  // Prefetching logic moved here
   useEffect(() => {
     const totalPages = query.data?.totalPages ?? 1;
     if (params.page >= totalPages) return;

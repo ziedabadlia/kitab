@@ -5,7 +5,6 @@ import {
 } from "@tanstack/react-query";
 import { useEffect } from "react";
 
-// Types and Keys move here
 export type AccountRequestsPage = {
   requests: any[];
   totalPages: number;
@@ -44,7 +43,6 @@ export function useAccountRequestsQuery(
 ) {
   const queryClient = useQueryClient();
 
-  // Determine if we should use server-side initial data
   const isDefaultView =
     params.page === 1 && params.query === "" && params.dir === "desc";
 
@@ -53,12 +51,13 @@ export function useAccountRequestsQuery(
     queryFn: () => fetchAccountRequests(params),
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 5,
+    refetchInterval: isDefaultView ? 5000 : false,
+    refetchIntervalInBackground: false,
     ...(isDefaultView && initialData
       ? { initialData, initialDataUpdatedAt: SERVER_DATA_TIMESTAMP }
       : {}),
   });
 
-  // Prefetching logic
   useEffect(() => {
     const totalPages = query.data?.totalPages ?? 1;
     if (params.page >= totalPages) return;

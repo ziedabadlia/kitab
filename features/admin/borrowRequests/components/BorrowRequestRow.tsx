@@ -15,6 +15,9 @@ export function BorrowRequestRow({ request }: { request: BorrowRequest }) {
     borrowedAt,
     dueDate,
     returnedAt,
+    rawBorrowedAt,
+    rawDueDate,
+    rawReturnedAt,
     isUpdating,
     isTerminal,
     isOverdue,
@@ -79,14 +82,12 @@ export function BorrowRequestRow({ request }: { request: BorrowRequest }) {
 
       <td className='px-6 py-4 text-slate-500 text-xs'>{borrowedAt || "-"}</td>
 
-      {/* Returned at — red if late */}
       <td className='px-6 py-4 text-slate-500 text-xs font-bold'>
         <span className={cn(isLateReturn && "text-red-600")}>
           {returnedAt || "-"}
         </span>
       </td>
 
-      {/* Due date — red if overdue */}
       <td className='px-6 py-4 text-xs'>
         <div className='flex items-center gap-1.5'>
           <span
@@ -111,11 +112,22 @@ export function BorrowRequestRow({ request }: { request: BorrowRequest }) {
               Receipt
             </button>
           </DialogTrigger>
-          <DialogContent className='max-w-md p-0 border-none'>
+          <DialogContent
+            key={borrowedAt! + returnedAt!}
+            className='max-w-md p-0 border-none'
+          >
             <BorrowReceipt
               setIsOpen={setIsReceiptOpen}
-              request={request}
               isLateReturn={isLateReturn || false}
+              request={{
+                ...request,
+                borrowedAt,
+                dueDate,
+                returnedAt,
+                rawBorrowedAt,
+                rawDueDate,
+                rawReturnedAt,
+              }}
             />
           </DialogContent>
         </Dialog>
