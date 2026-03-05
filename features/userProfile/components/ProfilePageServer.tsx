@@ -10,7 +10,7 @@ export default async function ProfilePage() {
 
   if (!session) redirect("/login");
 
-  if (session.user.status === UserStatus.ACCEPTED) {
+  if (session.user.status !== UserStatus.ACCEPTED) {
     return (
       <RestrictedAccess
         status={session.user.status}
