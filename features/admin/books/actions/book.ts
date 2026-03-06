@@ -143,6 +143,7 @@ export async function createBookAction(formData: FormData) {
         slug,
         totalCopies: parseInt(formData.get("totalCopies") as string) || 1,
         availableCopies: parseInt(formData.get("totalCopies") as string) || 1,
+        rating: parseFloat(formData.get("rating") as string) || 0,
         departmentId: formData.get("departmentId") as string,
         categories: {
           create: (formData.getAll("categoryIds") as string[]).map((id) => ({
@@ -177,12 +178,15 @@ export async function updateBookAction(formData: FormData) {
     const description = formData.get("description") as string;
     const departmentId = formData.get("departmentId") as string;
     const totalCopies = parseInt(formData.get("totalCopies") as string);
+    const rating = parseFloat(formData.get("rating") as string);
     const categoryIds = formData.getAll("categoryIds") as string[];
     const coverImageFile = formData.get("coverImage") as File | null;
     const videoFile = formData.get("video") as File | null;
     const manualCoverColor = formData.get("coverColor") as string | null;
 
     const updateData: any = { title, author, description, departmentId };
+
+    if (!isNaN(rating)) updateData.rating = rating;
 
     // Replace cover image if a new one was uploaded
     if (coverImageFile && coverImageFile.size > 0) {

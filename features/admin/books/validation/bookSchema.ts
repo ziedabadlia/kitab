@@ -7,6 +7,10 @@ export const bookSchema = z.object({
   departmentId: z.string().min(1, "Department is required"),
   categoryIds: z.array(z.string()).min(1, "Select at least one category"),
   totalCopies: z.number().min(1, "Must have at least 1 copy"),
+  rating: z
+    .number({ error: "Rating is required" })
+    .min(1, "Rating is required")
+    .max(5, "Max rating is 5"),
   coverImage: z.any().or(z.literal("")),
   coverColor: z
     .string()
