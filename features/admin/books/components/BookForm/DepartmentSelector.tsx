@@ -35,6 +35,12 @@ export function DepartmentSelector({ form, departments }: Props) {
 
   const selectedValue = form.watch("departmentId");
   const trimmed = search.trim();
+
+  // Filter manually so spaces don't confuse Command's built-in filter
+  const filtered = search
+    ? items.filter((d) => d.name.toLowerCase().includes(search.toLowerCase()))
+    : items;
+
   const exactMatch = items.some(
     (d) => d.name.toLowerCase() === trimmed.toLowerCase(),
   );
@@ -89,7 +95,8 @@ export function DepartmentSelector({ form, departments }: Props) {
           className='w-[--radix-popover-trigger-width] p-0'
           align='start'
         >
-          <Command className='border-none'>
+          {/* shouldFilter=false — we filter manually so spaces work correctly */}
+          <Command shouldFilter={false}>
             <CommandInput
               placeholder='Search or create department...'
               className='h-9 text-slate-900 placeholder:text-slate-400'
@@ -97,14 +104,14 @@ export function DepartmentSelector({ form, departments }: Props) {
               onValueChange={setSearch}
             />
             <CommandList>
-              {items.length === 0 && !showCreate && (
+              {filtered.length === 0 && !showCreate && (
                 <CommandEmpty>No departments found.</CommandEmpty>
               )}
               <CommandGroup>
-                {items.map((dept) => (
+                {filtered.map((dept) => (
                   <CommandItem
                     key={dept.id}
-                    value={dept.name}
+                    value={dept.id}
                     onSelect={() => {
                       form.setValue("departmentId", dept.id, {
                         shouldValidate: true,
@@ -128,6 +135,7 @@ export function DepartmentSelector({ form, departments }: Props) {
               {showCreate && (
                 <CommandGroup>
                   <CommandItem
+                    value='__create__'
                     onSelect={handleCreate}
                     disabled={isCreating}
                     className='cursor-pointer text-[#253585] font-medium border-t border-slate-100'

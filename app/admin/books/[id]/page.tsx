@@ -83,7 +83,6 @@ export default async function BookDetailsPage({
                 src={book.videoUrl}
                 className='w-full h-full object-cover'
                 controls
-                poster={book.coverImageUrl || ""}
               />
             </div>
           ) : (

@@ -4,7 +4,6 @@ import { Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useBookForm } from "../hooks/useBookForm";
 import { BookInfoFields } from "./BookForm/BookInfoFields";
-import { CategorySelector } from "./BookForm/CategorySelector";
 import { CoverImageField } from "./BookForm/CoverImageField";
 import { VideoUploadField } from "./BookForm/VideoUploadField";
 
@@ -31,12 +30,19 @@ export function BookForm({
     videoFile,
     handleCoverImageChange,
     handleVideoChange,
+    handleVideoUploadComplete,
     handleFormSubmit,
+    isVideoUploading,
   } = useBookForm({ initialData, onSubmit });
 
   const {
-    formState: { isSubmitting },
+    formState: { isSubmitting, isDirty },
   } = form;
+
+  const isEditMode = !!initialData;
+  // In edit mode, disable if nothing changed and no new media selected
+  const isUnchanged = isEditMode && !isDirty && !videoFile;
+  const isDisabled = isSubmitting || isVideoUploading || isUnchanged;
 
   return (
     <form
@@ -58,7 +64,6 @@ export function BookForm({
       )}
 
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-10'>
-        {/* Left Column: Info & Categories */}
         <div className='h-full'>
           <BookInfoFields
             form={form}
@@ -67,7 +72,6 @@ export function BookForm({
           />
         </div>
 
-        {/* Right Column: Media */}
         <div className='space-y-6'>
           <h3 className='text-lg font-semibold text-slate-800 border-b pb-2'>
             Book Media
@@ -81,23 +85,28 @@ export function BookForm({
             videoFile={videoFile}
             initialVideoUrl={initialData?.videoUrl}
             onVideoChange={handleVideoChange}
+            onUploadComplete={handleVideoUploadComplete}
           />
         </div>
       </div>
 
-      {/* Submit Button */}
       <div className='pt-6 border-t'>
         <Button
           type='submit'
-          disabled={isSubmitting}
+          disabled={isDisabled}
           className='w-full bg-[#253585] hover:bg-blue-900 text-white h-14 rounded-xl text-lg font-bold shadow-lg shadow-blue-900/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed'
         >
-          {isSubmitting ? (
+          {isVideoUploading ? (
             <div className='flex items-center gap-2'>
               <Loader2 className='h-5 w-5 animate-spin' />
-              <span>Uploading...</span>
+              <span>Waiting for video upload...</span>
             </div>
-          ) : initialData ? (
+          ) : isSubmitting ? (
+            <div className='flex items-center gap-2'>
+              <Loader2 className='h-5 w-5 animate-spin' />
+              <span>Saving...</span>
+            </div>
+          ) : isEditMode ? (
             "Update Book Entry"
           ) : (
             "Publish Book to Library"

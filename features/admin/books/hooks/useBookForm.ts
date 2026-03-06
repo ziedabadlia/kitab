@@ -7,7 +7,6 @@ import { useBookMedia } from "./useBookMedia";
 
 interface UseBookFormProps {
   initialData?: any;
-  // Return type changed from void to the actual server action response shape
   onSubmit: (
     data: FormData,
   ) => Promise<{ success: boolean; message?: string; data?: any }>;
@@ -34,6 +33,7 @@ export function useBookForm({ initialData, onSubmit }: UseBookFormProps) {
       departmentId:
         initialData?.departmentId || initialData?.department?.id || "",
       totalCopies: initialData?.totalCopies || 1,
+      rating: initialData?.rating ?? 0,
       coverColor: initialData?.coverColor || "#010101",
       categoryIds: getInitialCategoryIds(),
     },
@@ -44,24 +44,33 @@ export function useBookForm({ initialData, onSubmit }: UseBookFormProps) {
   const handleFormSubmit = async (data: BookFormValues) => {
     media.setUploadError(null);
 
+    if (media.isVideoUploading) {
+      media.setUploadError(
+        "Please wait for the video to finish uploading before submitting.",
+      );
+      return;
+    }
+
     const formData = new FormData();
     formData.append("title", data.title);
     formData.append("author", data.author);
     formData.append("description", data.description);
     formData.append("departmentId", data.departmentId);
     formData.append("totalCopies", data.totalCopies.toString());
+    formData.append("rating", data.rating.toString());
     if (data.coverColor) formData.append("coverColor", data.coverColor);
     data.categoryIds.forEach((id) => formData.append("categoryIds", id));
     if (data.coverImage instanceof File)
       formData.append("coverImage", data.coverImage);
-    if (data.video instanceof File) formData.append("video", data.video);
+    // Use ref to get latest URL — avoids stale closure from React state
+    const currentVideoUrl = media.videoUrlRef.current;
+    if (currentVideoUrl) formData.append("videoUrl", currentVideoUrl);
     if (initialData?.id) formData.append("bookId", initialData.id);
 
     try {
       const result = await onSubmit(formData);
 
       if (result.success) {
-        // Toast and redirect live here on the client — never in the server action
         toast.success(
           initialData
             ? "Book updated successfully!"
@@ -73,7 +82,14 @@ export function useBookForm({ initialData, onSubmit }: UseBookFormProps) {
         media.setUploadError(msg);
         toast.error(msg);
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Next.js redirect() and notFound() throw special non-Error objects — let them propagate
+      if (
+        error?.digest?.startsWith("NEXT_REDIRECT") ||
+        error?.digest === "NEXT_NOT_FOUND"
+      ) {
+        throw error;
+      }
       const msg =
         error instanceof Error ? error.message : "Failed to submit form";
       media.setUploadError(msg);

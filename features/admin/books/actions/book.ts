@@ -2,10 +2,8 @@
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import { deleteMedia, uploadImage, uploadVideo } from "../lib/cloudinary";
+import { deleteMedia, uploadImage } from "../lib/cloudinary";
 import { Book } from "../types";
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 
 const slugify = (text: string) =>
   text
@@ -14,8 +12,6 @@ const slugify = (text: string) =>
     .replace(/\s+/g, "-")
     .replace(/[^\w\-]+/g, "")
     .replace(/\-\-+/g, "-");
-
-// ── Read ──────────────────────────────────────────────────────────────────────
 
 export async function getBooksAction({ page = 1, search = "", pageSize = 10 }) {
   const skip = (page - 1) * pageSize;
@@ -84,16 +80,13 @@ export async function getBookByIdAction(id: string) {
         categories: { include: { category: true } },
       },
     });
-
     if (!book) return { success: false, message: "Book not found" };
-
     return { success: true, data: book };
   } catch (error: any) {
     return { success: false, message: error.message };
   }
 }
 
-// Returns all departments and categories for populating form selects
 export async function getBookFormOptions() {
   try {
     const [departments, categories] = await Promise.all([
@@ -108,28 +101,23 @@ export async function getBookFormOptions() {
     ]);
     return { departments, categories };
   } catch {
-    // Return safe defaults so the page doesn't crash if DB is unreachable
     return { departments: [], categories: [] };
   }
 }
-
-// ── Create ────────────────────────────────────────────────────────────────────
 
 export async function createBookAction(formData: FormData) {
   try {
     const title = formData.get("title") as string;
     const coverImageFile = formData.get("coverImage") as File | null;
-    const videoFile = formData.get("video") as File | null;
     const manualCoverColor = formData.get("coverColor") as string | null;
+    // Video is now uploaded directly to Cloudinary from the browser — we receive the URL
+    const videoUrl = (formData.get("videoUrl") as string | null) || null;
 
     if (!coverImageFile)
       return { success: false, message: "Cover image is required" };
 
     const { url: coverImageUrl, color: extractedColor } =
       await uploadImage(coverImageFile);
-    const videoUrl =
-      videoFile && videoFile.size > 0 ? await uploadVideo(videoFile) : null;
-
     const slug = `${slugify(title)}-${Math.random().toString(36).substring(2, 8)}`;
 
     const newBook = await db.book.create({
@@ -143,6 +131,7 @@ export async function createBookAction(formData: FormData) {
         slug,
         totalCopies: parseInt(formData.get("totalCopies") as string) || 1,
         availableCopies: parseInt(formData.get("totalCopies") as string) || 1,
+        rating: parseFloat(formData.get("rating") as string) || 0,
         departmentId: formData.get("departmentId") as string,
         categories: {
           create: (formData.getAll("categoryIds") as string[]).map((id) => ({
@@ -158,8 +147,6 @@ export async function createBookAction(formData: FormData) {
     return { success: false, message: error.message };
   }
 }
-
-// ── Update ────────────────────────────────────────────────────────────────────
 
 export async function updateBookAction(formData: FormData) {
   try {
@@ -177,21 +164,23 @@ export async function updateBookAction(formData: FormData) {
     const description = formData.get("description") as string;
     const departmentId = formData.get("departmentId") as string;
     const totalCopies = parseInt(formData.get("totalCopies") as string);
+    const rating = parseFloat(formData.get("rating") as string);
     const categoryIds = formData.getAll("categoryIds") as string[];
     const coverImageFile = formData.get("coverImage") as File | null;
-    const videoFile = formData.get("video") as File | null;
     const manualCoverColor = formData.get("coverColor") as string | null;
+    // Video is now uploaded directly to Cloudinary from the browser — we receive the URL
+    const newVideoUrl = (formData.get("videoUrl") as string | null) || null;
 
     const updateData: any = { title, author, description, departmentId };
+
+    if (!isNaN(rating)) updateData.rating = rating;
 
     // Replace cover image if a new one was uploaded
     if (coverImageFile && coverImageFile.size > 0) {
       if (existingBook.coverImageUrl)
         await deleteMedia(existingBook.coverImageUrl, "image");
-
       const { url: coverImageUrl, color: extractedColor } =
         await uploadImage(coverImageFile);
-
       updateData.coverImageUrl = coverImageUrl;
       updateData.coverColor =
         manualCoverColor && manualCoverColor.startsWith("#")
@@ -199,14 +188,13 @@ export async function updateBookAction(formData: FormData) {
           : extractedColor;
     }
 
-    // Replace video if a new one was uploaded
-    if (videoFile && videoFile.size > 0) {
+    // If a new video was uploaded directly, delete old one and save new URL
+    if (newVideoUrl && newVideoUrl !== existingBook.videoUrl) {
       if (existingBook.videoUrl)
         await deleteMedia(existingBook.videoUrl, "video");
-      updateData.videoUrl = await uploadVideo(videoFile);
+      updateData.videoUrl = newVideoUrl;
     }
 
-    // Adjust available copies proportionally when total copies changes
     if (!isNaN(totalCopies)) {
       const diff = totalCopies - existingBook.totalCopies;
       updateData.totalCopies = totalCopies;
@@ -218,7 +206,6 @@ export async function updateBookAction(formData: FormData) {
 
     await db.book.update({ where: { id: bookId }, data: updateData });
 
-    // Replace categories if provided
     if (categoryIds.length > 0) {
       await db.bookCategory.deleteMany({ where: { bookId } });
       await db.bookCategory.createMany({
@@ -241,8 +228,6 @@ export async function updateBookAction(formData: FormData) {
     return { success: false, message: error.message };
   }
 }
-
-// ── Delete ────────────────────────────────────────────────────────────────────
 
 export async function deleteBookAction(bookId: string) {
   const book = await db.book.findUnique({ where: { id: bookId } });

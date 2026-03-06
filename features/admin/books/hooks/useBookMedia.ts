@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { UseFormSetValue } from "react-hook-form";
 import { BookFormValues } from "../validation/bookSchema";
 
@@ -11,6 +11,9 @@ export function useBookMedia(
     initialCover || null,
   );
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const videoUrlRef = useRef<string | null>(null);
+  const [isVideoUploading, setIsVideoUploading] = useState(false);
 
   const extractColor = (dataUrl: string) => {
     const img = new Image();
@@ -62,18 +65,35 @@ export function useBookMedia(
     reader.readAsDataURL(file);
   };
 
+  // Called when user selects a file — tracks it locally for display
+  const handleVideoChange = (file: File | null) => {
+    setVideoFile(file);
+    if (!file) {
+      setVideoUrl(null);
+      videoUrlRef.current = null;
+      setIsVideoUploading(false);
+    } else {
+      setIsVideoUploading(true);
+    }
+  };
+
+  // Called when direct Cloudinary upload finishes — stores the final URL
+  const handleVideoUploadComplete = (url: string) => {
+    setVideoUrl(url);
+    videoUrlRef.current = url;
+    setIsVideoUploading(false);
+  };
+
   return {
     uploadError,
     setUploadError,
     coverPreview,
     videoFile,
+    videoUrl,
     handleCoverImageChange,
-    handleVideoChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        setValue("video", file);
-        setVideoFile(file);
-      }
-    },
+    handleVideoChange,
+    handleVideoUploadComplete,
+    isVideoUploading,
+    videoUrlRef,
   };
 }

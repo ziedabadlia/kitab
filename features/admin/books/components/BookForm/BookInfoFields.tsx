@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { BookFormValues } from "../../validation/bookSchema";
 import { CategorySelector } from "./CategorySelector";
 import { DepartmentSelector } from "./DepartmentSelector";
+import StarRatingField from "./StarRatingField";
 
 interface Props {
   form: UseFormReturn<BookFormValues>;
@@ -81,6 +82,9 @@ export function BookInfoFields({ form, departments, categories }: Props) {
           )}
         </div>
       </div>
+
+      {/* Star Rating */}
+      <StarRatingField form={form} />
 
       <CategorySelector form={form} categories={categories} />
 

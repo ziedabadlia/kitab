@@ -22,15 +22,16 @@ const AuthButton = ({
       type='submit'
       disabled={isSubmitting || isLoadingOptions}
       className={`
-        w-full py-8 px-8 bg-[#E7C9A5] text-[16px] font-bold leading-6 text-[#14171C] 
-        cursor-pointer hover:bg-[#d4b894] transition-colors
-        ${className} 
+        w-full py-2.5 md:py-3 px-6 h-auto
+        bg-[#E7C9A5] text-sm md:text-base font-bold leading-6 text-[#14171C]
+        cursor-pointer hover:bg-[#d4b894] transition-colors rounded-lg
+        ${className}
       `}
       {...props}
     >
       {isSubmitting ? (
         <div className='flex items-center justify-center gap-2'>
-          <Loader2 className='h-5 w-5 animate-spin' />
+          <Loader2 className='h-4 w-4 md:h-5 md:w-5 animate-spin' />
           <span>Please wait...</span>
         </div>
       ) : (
