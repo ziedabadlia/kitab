@@ -44,6 +44,13 @@ export function useBookForm({ initialData, onSubmit }: UseBookFormProps) {
   const handleFormSubmit = async (data: BookFormValues) => {
     media.setUploadError(null);
 
+    if (media.isVideoUploading) {
+      media.setUploadError(
+        "Please wait for the video to finish uploading before submitting.",
+      );
+      return;
+    }
+
     const formData = new FormData();
     formData.append("title", data.title);
     formData.append("author", data.author);
@@ -55,7 +62,9 @@ export function useBookForm({ initialData, onSubmit }: UseBookFormProps) {
     data.categoryIds.forEach((id) => formData.append("categoryIds", id));
     if (data.coverImage instanceof File)
       formData.append("coverImage", data.coverImage);
-    if (data.video instanceof File) formData.append("video", data.video);
+    // Use ref to get latest URL — avoids stale closure from React state
+    const currentVideoUrl = media.videoUrlRef.current;
+    if (currentVideoUrl) formData.append("videoUrl", currentVideoUrl);
     if (initialData?.id) formData.append("bookId", initialData.id);
 
     try {
@@ -73,7 +82,14 @@ export function useBookForm({ initialData, onSubmit }: UseBookFormProps) {
         media.setUploadError(msg);
         toast.error(msg);
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Next.js redirect() and notFound() throw special non-Error objects — let them propagate
+      if (
+        error?.digest?.startsWith("NEXT_REDIRECT") ||
+        error?.digest === "NEXT_NOT_FOUND"
+      ) {
+        throw error;
+      }
       const msg =
         error instanceof Error ? error.message : "Failed to submit form";
       media.setUploadError(msg);

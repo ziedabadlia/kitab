@@ -82,25 +82,27 @@ export default async function BookDetailsPage({
           <BookReviews bookId={book.id} initialData={reviewsData} />
         </div>
 
-        <aside className='flex-1'>
-          <h2 className='text-2xl font-bold text-white mb-8'>
-            More similar books
-          </h2>
-          <div className='grid grid-cols-2 sm:grid-cols-3 gap-y-10 gap-x-6'>
-            {similarBooks.map((similarBook) => (
-              <div key={similarBook.id} className='flex justify-center'>
-                <BookLink id={similarBook.id} title={similarBook.title}>
-                  <BookCover
-                    coverImage={similarBook.coverImageUrl!}
-                    coverColor={similarBook.coverColor}
-                    variant='regular'
-                    className='w-full max-w-[120px] aspect-2/3'
-                  />
-                </BookLink>
-              </div>
-            ))}
-          </div>
-        </aside>
+        {similarBooks.length > 0 && (
+          <aside className='flex-1'>
+            <h2 className='text-2xl font-bold text-white mb-8'>
+              More similar books
+            </h2>
+            <div className='grid grid-cols-2 sm:grid-cols-3 gap-y-10 gap-x-6'>
+              {similarBooks.map((similarBook) => (
+                <div key={similarBook.id} className='flex justify-center'>
+                  <BookLink id={similarBook.id} title={similarBook.title}>
+                    <BookCover
+                      coverImage={similarBook.coverImageUrl!}
+                      coverColor={similarBook.coverColor}
+                      variant='regular'
+                      className='w-full max-w-[120px] aspect-2/3'
+                    />
+                  </BookLink>
+                </div>
+              ))}
+            </div>
+          </aside>
+        )}
       </div>
     </div>
   );
