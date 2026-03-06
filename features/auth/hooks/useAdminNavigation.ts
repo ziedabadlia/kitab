@@ -1,7 +1,6 @@
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 
-// Icons
 import whiteHomeIconSvg from "@/assets/svg/admin/whiteHomeIcon.svg";
 import whiteUsersIconSvg from "@/assets/svg/admin/whiteUsersIcon.svg";
 import whiteBooksIconSvg from "@/assets/svg/admin/whiteBook.svg";
@@ -30,7 +29,7 @@ export const useAdminNavigation = () => {
       },
       {
         name: "All Books",
-        href: ["/admin/books", "/admin/books/new", "/admin/books/edit"],
+        href: "/admin/books",
         icons: [whiteBooksIconSvg, greyBooksIconSvg],
       },
       {
@@ -50,9 +49,7 @@ export const useAdminNavigation = () => {
   const routes = useMemo(() => {
     return navItems.map((item) => ({
       ...item,
-      isActive: Array.isArray(item.href)
-        ? item.href.includes(pathname)
-        : item.href === pathname,
+      isActive: pathname === item.href || pathname.startsWith(item.href + "/"),
     }));
   }, [pathname, navItems]);
 
